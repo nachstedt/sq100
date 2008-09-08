@@ -1,0 +1,29 @@
+<h1>settings</h1>
+
+<fieldset><legend>gh615 Config</legend>
+
+<form method="post" action="doUpdate">
+<% for section in gh615Config %>
+	<h3>$section</h3>
+    <ul>
+    <% for item in gh615Config[section] %>
+    	<li>
+        	<label for="$item">$item</label>
+       		<input name="$section/$item" id="$item" type="text" value="$gh615Config[section][item]" />
+        </li>
+    <% endfor %>
+    </ul>
+<% endfor %>
+
+<p class="buttons">
+	<input type="submit" value="save" />
+</p>
+</form>
+
+</fieldset>
+
+<fieldset><legend>gh615 log</legend>
+<textarea class="log">
+$log
+</textarea>
+</fieldset>
