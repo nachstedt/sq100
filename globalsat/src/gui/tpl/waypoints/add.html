@@ -1,0 +1,59 @@
+<script src="http://maps.google.com/maps?file=api&amp;v=2&amp;key=ABQIAAAAoOnC-lqJNSFyH3kfjFZRnxRi_j0U6kJrkFvY4-OX2XYmEAa76BR1gHXtME6-_ixTZJUWTuVeHfPJlw" type="text/javascript"></script>
+<script src="/static/global.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+<!--
+window.addEvent('domready', function() {		
+    mwm = new Map();
+    mwm.setup_marker_placement();
+    mwm.setup_geocoder($('geocoder'));
+})
+//-->
+</script>
+
+<h1>create a new waypoint</h1>
+
+<fieldset><legend>New Waypoint</legend>
+<form action="doAdd/" id="add" method="post">
+	
+	<ul>
+	<li>
+	<label for="title">Title</label>
+    <input name="title" id="title" type="text" maxlength="6">
+	</li>
+	
+	<li>
+    <label>Lat / Lng</label>
+    <input name="latitude" id="latitude" type="text"> | <input name="longitude" id="longitude" type="text">
+	</li>
+
+    <li>
+    <label for="altitude">Altitude</label>
+    <input name="altitude" id="altitude" type="text">
+	</li>
+    
+    <li>
+    <label for="type">Type</label>
+    <select name="type" id="type">
+    <% for i, type in types.items() %>
+    	<option value="$i">$type</option>
+    <% endfor %>
+    </select>
+    </li>
+
+    
+    <p class="buttons">
+    <input type="submit" name="operation" value="save & copy to watch" /> | <input type="submit" name="operation" value="save" />
+	</p>
+</form>
+</fieldset>
+
+<p class="info">Double click to add marker. Then drag 'n drop.</p>
+<div id="map"></div>
+
+<fieldset><legend>Geocoder</legend>
+<form action="#" id="geocoder">
+    <input type="text" size="60" name="address" value="78120 Furtwangen, Germany" />
+    <input type="submit" value="Go!" />
+</form>
+</fieldset>

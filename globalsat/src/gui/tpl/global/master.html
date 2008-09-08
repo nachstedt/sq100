@@ -1,0 +1,29 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<script src="/static/mootools.js" type="text/javascript"></script>
+	<script src="/static/global.js" type="text/javascript"></script>
+    <link href="/static/style.css" rel="stylesheet" type="text/css" />
+	
+	<title>GH600 GUI</title>
+</head>
+
+<body>
+<div id="wrap">
+
+<img id="logo" src="/static/logo.gif" />
+
+<ul id="firstLevel">
+	<!--<li <% if highlight == "tracks" %>class="current"<% endif %>><a href="/tracks">tracks</a></li>-->
+    <li <% if highlight == "waypoints" %>class="current"<% endif %>><a href="/waypoints">waypoints</a></li>
+	<li <% if highlight == "settings" %>class="current"<% endif %>><a href="/settings">settings</a></li>
+	<li><a href="/exit">quit</a></li>
+</ul>
+
+$content
+
+<br /><br />
+</div>
+</body>
+</html>
