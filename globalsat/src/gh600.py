@@ -604,11 +604,17 @@ class GH600(SerialInterface):
         self.logger = logging.getLogger('GH600')
         self.logger.addHandler(handler)
         self.logger.setLevel(logging.DEBUG)
-                            
+                                    
+        outputHandler = logging.StreamHandler()
         if self.config.getboolean("debug", "output"):
-            outputHandler = logging.StreamHandler()
-            outputHandler.setFormatter(logging.Formatter('%(levelname)s %(funcName)s(%(lineno)d): %(message)s'))
-            self.logger.addHandler(outputHandler)
+            level = logging.DEBUG
+            format = '%(levelname)s %(funcName)s(%(lineno)d): %(message)s'
+        else:
+            level = logging.INFO
+            format = '%(message)s'
+        outputHandler.setFormatter(logging.Formatter(format))
+        outputHandler.setLevel(level)
+        self.logger.addHandler(outputHandler)
             
         if self.__class__ is GH600:
             if self.config.has_option("general", "firmware"):
@@ -799,6 +805,8 @@ class GH600(SerialInterface):
     def getUnitInformation(self):
         response = self._querySerial('unitInformation')
         
+        self.logger.info('STUFF')
+        
         if len(response) == 180:
             unit = {
                 'device_name'      : Utilities.hex2chr(response[4:20]),
@@ -846,8 +854,7 @@ class GH615(GH600):
         payload = Utilities.dec2hex((len(trackIds) * 512) + 896, 4)
         numberOfTracks = Utilities.dec2hex(len(trackIds), 4) 
         checksum = Utilities.checkersum("%s%s%s" % (payload, numberOfTracks, ''.join(trackIds)))
-          
-        #self._connectSerial()
+
         self._writeSerial('getTracks', **{'payload':payload, 'numberOfTracks':numberOfTracks, 'trackIds': ''.join(trackIds), 'checksum':checksum})
                     
         tracks = []
