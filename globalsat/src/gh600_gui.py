@@ -1,8 +1,9 @@
 from __future__ import with_statement
 
+import os
+import urllib
 import webbrowser
 import pickle
-import urllib
 import cherrypy
 
 from gh600 import GH600, Utilities, Waypoint
@@ -29,6 +30,9 @@ class Root:
 
 class Waypoints:
     def getWaypointLibrary(self):
+        if not os.path.exists('waypoint_library'):
+            pickle.dump([], open("waypoint_library", 'wb'))
+            return []
         return pickle.load(open("waypoint_library"))
     
     def saveWaypointLibrary(self, waypoints):
@@ -62,7 +66,8 @@ class Waypoints:
         waypoints = self.getWaypointLibrary()
         waypoints.append(w)
         self.saveWaypointLibrary(waypoints)
-        if operation is not "save":
+
+        if operation != "save":
             self.saveWaypointsToGh([w])
         raise cherrypy.HTTPRedirect('/waypoints')
         
@@ -81,7 +86,8 @@ class Waypoints:
         w = Waypoint(latitude, longitude, altitude, title, int(type))
         waypoints.insert(int(id), w)
         self.saveWaypointLibrary(waypoints)
-        if operation is not "save":
+        
+        if operation != "save":
             self.saveWaypointsToGh([w])
         raise cherrypy.HTTPRedirect('/waypoints')
         
@@ -185,6 +191,9 @@ else:
 cherrypy.tree.mount(root, config="gui/app.conf")
 
 def launch_browser():
+    print "Gui running"
+    print "Your browser will now be pointed to %s" % cherrypy.server.base()
+    print "When you are done, just close this window"
     webbrowser.open(cherrypy.server.base())
 cherrypy.engine.subscribe('start', launch_browser)
 
