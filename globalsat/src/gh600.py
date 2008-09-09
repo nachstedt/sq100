@@ -429,7 +429,7 @@ class ExportFormat(object):
             templateConfig.read(Utilities.getAppPrefix('exportTemplates', 'formats.ini'))
             if not templateConfig.has_section(format):
                 templateConfig.add_section(format)
-                                    
+            
             self.name        = format
             self.nicename    = templateConfig.get(format, 'nicename', vars={'default':format})
             self.extension   = templateConfig.get(format, 'extension', vars={'default':format})
@@ -441,28 +441,26 @@ class ExportFormat(object):
     def __str__(self):
         return "%s" % self.name
     
-    def exportTrack(self, track, **kwargs):
-        self.__export([track], **kwargs)
+    def exportTrack(self, track, path, **kwargs):
+        self.__export([track], path, **kwargs)
     
-    def exportTracks(self, tracks, **kwargs):
+    def exportTracks(self, tracks, path, **kwargs):
         if 'merge' in kwargs and kwargs['merge']:
-            self.__export(tracks, **kwargs)
+            self.__export(tracks, path, **kwargs)
         else:
             for track in tracks:
-                self.exportTrack(track, **kwargs)
+                self.exportTrack(track, path, **kwargs)
     
-    def __export(self, tracks, **kwargs):
+    def __export(self, tracks, path, **kwargs):
         if os.path.exists(Utilities.getAppPrefix('exportTemplates', 'pre', '%s.py' % self.name)):
             sys.path.append(Utilities.getAppPrefix('exportTemplates', 'pre'))
             pre_processor = __import__(self.name)
             for track in tracks:
                 pre_processor.pre(track)
-                
-        if 'path' in kwargs:
-            path = os.path.join(kwargs['path'])
-        else:
-            path = Utilities.getAppPrefix('export')
-                
+        
+        if not os.path.exists(path):
+            os.mkdir(path)
+            
         path = os.path.join(path, "%s.%s" % (tracks[0].date.strftime("%Y-%m-%d_%H-%M-%S"), self.extension))
         #first arg is for compatibility reasons
         t = Template.from_file(Utilities.getAppPrefix('exportTemplates', '%s.txt' % self.name))
@@ -591,7 +589,6 @@ class GH600(SerialInterface):
     }
             
     def __init__(self):
-        #config
         self.config = ConfigParser.SafeConfigParser()
         self.config.read(Utilities.getAppPrefix('config.ini'))                
                 
@@ -670,6 +667,15 @@ class GH600(SerialInterface):
     @serial_required
     def getTracks(self, trackIds):
         raise NotImplemented('This is an abstract method, please instantiate a subclass')
+    
+    def exportTracks(self, tracks, format = None, path = None, **kwargs):
+        if format is None:
+            format = self.config.get("export", "default")
+        if path is None:
+            path = os.path.abspath(Utilities.getAppPrefix(self.config.get('export', 'path')))
+        
+        ef = ExportFormat(format)
+        ef.exportTracks(tracks, path, **kwargs)
     
     def importTracks(self, files, **kwargs):        
         if "path" in kwargs:
@@ -804,9 +810,7 @@ class GH600(SerialInterface):
     @serial_required
     def getUnitInformation(self):
         response = self._querySerial('unitInformation')
-        
-        self.logger.info('STUFF')
-        
+
         if len(response) == 180:
             unit = {
                 'device_name'      : Utilities.hex2chr(response[4:20]),

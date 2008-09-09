@@ -89,7 +89,7 @@ def choose():
             merge = True if merge == "y" else False
         
         tracks = gh.getTracks(trackIds)
-        ef.exportTracks(tracks, merge = merge)
+        gh.exportTracks(tracks, format, merge = merge)
         print 'exported %i tracks' % len(tracks)
         
     elif command.startswith("c"):
@@ -103,8 +103,7 @@ def choose():
             print "FYI: Exporting to default format '%s' (see config.ini)" % format
         
         tracks = gh.getAllTracks()
-        ef = ExportFormat(format)
-        results = ef.exportTracks(tracks)
+        results = gh.exportTracks(tracks, format)
         print 'exported %i tracks to %s' % (len(tracks), format)
         
     elif command == "d":
@@ -215,6 +214,12 @@ def main():
         #set serial port
         if options.com:
             gh.config.set('serial', 'comport', options.com)
+
+        if options.output:
+            gh.config.set('export', 'path', options.output)
+            
+        if options.format:
+            gh.config.set('export', 'default', options.format)
         
         if args[0] == "a":
             tracklist()
@@ -224,13 +229,11 @@ def main():
                 parser.error("use option '--track' to select track")
                 
             tracks = gh.getTracks(options.tracks)
-            ef = ExportFormat(options.format)
-            ef.exportTracks(tracks, merge = options.merge, path = options.output)
+            gh.exportTracks(tracks, gh.config.get('export', 'default'), gh.config.get('export', 'path'), merge = options.merge)
             
         if args[0] == "c":        
             tracks = gh.getAllTracks()
-            ef = ExportFormat(options.format)
-            ef.exportTracks(tracks, merge = options.merge, path = options.output)
+            gh.exportTracks(tracks, gh.config.get('export', 'default'), gh.config.get('export', 'path'), merge = options.merge)
             
         if args[0] == "d":
             if not options.input:
