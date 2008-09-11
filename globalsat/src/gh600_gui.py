@@ -179,7 +179,7 @@ class Error:
         template = HTMLTemplate('global/error.html')
         return template.render()
 
-
+print "Connecting to your GH..."
 gh = GH600()
 if gh.testConnectivity():
     #SITEMAP
@@ -188,6 +188,7 @@ if gh.testConnectivity():
     root.settings = Settings()
 else:
     root = Error()
+    root.settings = Settings()
 cherrypy.tree.mount(root, config="gui/app.conf")
 
 def launch_browser():

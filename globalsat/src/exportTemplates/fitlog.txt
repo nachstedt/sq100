@@ -1,8 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FitnessWorkbook version="1.0" creator="code.google.com/p/GH615"
-  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xmlns:xsd="http://www.w3.org/2001/XMLSchema"
-  xmlns="http://www.zonefivesoftware.com/xmlschemas/FitnessLogbook/v1/fitnesslog.xsd">
+  <FitnessWorkbook xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="http://www.zonefivesoftware.com/xmlschemas/FitnessLogbook/v1">
   
   <AthleteLog>
   <% for track in tracks %>
