@@ -13,7 +13,7 @@
 		<trkpt lat="$trackpoint.latitude" lon="$trackpoint.longitude">
 			<ele>$trackpoint.altitude</ele>
 			<speed>$trackpoint.speed</speed>
-			<time>$trackpoint.date.strftime("%Y-%m-%dT%H:%M:%SZ")</time>
+			<time>$trackpoint.date.isoformat()</time>
 		</trkpt>
 	<% endfor %>
 	</trkseg>

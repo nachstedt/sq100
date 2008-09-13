@@ -22,7 +22,7 @@
 					<gpxdata:index>$i</gpxdata:index>
 					<gpxdata:startPoint lat="$lap.startPoint.latitude" lon="$lap.startPoint.longitude" />
 					<gpxdata:endPoint lat="$lap.endPoint.latitude" lon="$lap.endPoint.longitude" />
-					<gpxdata:startTime>$lap.start.strftime("%Y-%m-%dT%H:%M:%SZ")</gpxdata:startTime>
+					<gpxdata:startTime>$lap.start.isoformat()</gpxdata:startTime>
 					<gpxdata:elapsedTime>$lap.duration.seconds</gpxdata:elapsedTime>
 					<gpxdata:calories>$lap.calories</gpxdata:calories>
 					<gpxdata:distance>$lap.distance</gpxdata:distance>
@@ -45,7 +45,7 @@
 	<% for trackpoint in track.trackpoints %>
 		<trkpt lat="$trackpoint.latitude" lon="$trackpoint.longitude">
 			<ele>$trackpoint.altitude</ele>
-			<time>$trackpoint.date.strftime("%Y-%m-%dT%H:%M:%SZ")</time>
+			<time>$trackpoint.date.isoformat()</time>
 			<extensions>
 				<gpxdata:hr>$trackpoint.heartrate</gpxdata:hr>
 			</extensions>

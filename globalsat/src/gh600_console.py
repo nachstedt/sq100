@@ -9,7 +9,7 @@ def tracklist():
     tracks = gh.getTracklist()
     #display
     if tracks:
-        print 'id         date        distance calories topspeed trkpnts  laps'
+        print 'id             date          distance calories topspeed trkpnts  laps'
         for track in tracks:
             print str(track)
     else:
@@ -26,21 +26,23 @@ def prompt_format():
         
 
 def choose():
-    print "\n What do you want to do?\n\
- ------TRACKS-------\n\
- [a]  = get list of all tracks\n\
- [b]  = export a single track | [b?] to select format or [b <format>]\n\
- [c]  = export all tracks     | [c?] to select format or [c <format>]\n\
- [d]  = upload tracks\n\
- -----WAYPOINTS-----\n\
- [e]  = download waypoints\n\
- [f]  = upload waypoints\n\
- -----ETC-----------\n\
- [gg] = format tracks\n\
- [hh] = format waypoints\n\
- [i]  = get device information\n\
- -------------------\n\
- [q]=quit"
+    print """
+What do you want to do?\n\
+------TRACKS-------\n\
+[a]  = get list of all tracks\n\
+[b]  = export a single track | [b?] to select format or [b <format>]\n\
+[c]  = export all tracks     | [c?] to select format or [c <format>]\n\
+[d]  = upload tracks\n\
+-----WAYPOINTS-----\n\
+[e]  = download waypoints\n\
+[f]  = upload waypoints\n\
+-----ETC-----------\n\
+[gg] = format tracks\n\
+[hh] = format waypoints\n\
+[i]  = get device information\n\
+-------------------\n\
+[q]=quit"""
+
     command = raw_input("=>").strip()
     
     if command == "a":

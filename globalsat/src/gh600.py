@@ -5,11 +5,14 @@ import math
 import time, datetime
 import ConfigParser
 import logging
+from decimal import Decimal
 
 import serial
-from decimal import Decimal
-from gpxParser import GPXParser
+from pytz import timezone, utc
+
 from templates import Template
+from gpxParser import GPXParser
+
 
 class Utilities():
     @classmethod
@@ -118,13 +121,16 @@ class Point(object):
 
 
 class Trackpoint(Point):    
-    def __init__(self, latitude = 0, longitude = 0, altitude = 0, speed = 0, heartrate = 0, interval = datetime.timedelta(), date = datetime.datetime.now()):
+    def __init__(self, latitude = 0, longitude = 0, altitude = 0, speed = 0, heartrate = 0, interval = datetime.timedelta(), date = datetime.datetime.utcnow()):
         self.altitude    = altitude
         self.speed       = speed
         self.heartrate   = heartrate
         self.interval    = interval
         self.date        = date
         super(Trackpoint, self).__init__(latitude, longitude)
+    
+    def __getitem__(self, attr):
+        return getattr(self, attr)
         
     def __str__(self):
         return "(%f, %f, %i, %i, %i, %i)" % (self.latitude, self.longitude, self.altitude, self.speed, self.heartrate, self.interval)
@@ -138,10 +144,7 @@ class Trackpoint(Point):
             'heartrate':  Utilities.dec2hex(self.heartrate,2),
             'interval':   Utilities.dec2hex(self.interval.microseconds/1000,4)
         }
-    
-    def __getitem__(self, attr):
-        return getattr(self, attr)
-    
+        
     def fromHex(self, hex):
         if len(hex) == 30:
             self.latitude  = Coordinate().fromHex(hex[0:8])
@@ -237,6 +240,7 @@ class Waypoint(Point):
         else:
             raise GH600ParseException(self.__class__.__name__, len(hex), 36)
 
+
 class Lap(object):
     def __init__(self, start = datetime.datetime.now(), end = datetime.datetime.now(), duration = datetime.timedelta(), distance = 0, calories = 0,
                  startPoint = Point(0,0), endPoint = Point(0,0)):
@@ -283,7 +287,7 @@ class Lap(object):
         
 
 class Track(object):    
-    def __init__(self, date = datetime.datetime.now(), duration = datetime.timedelta(), distance = 0, calories = 0, topspeed = 0, trackpointCount = 0):
+    def __init__(self, date = datetime.datetime.utcnow(), duration = datetime.timedelta(), distance = 0, calories = 0, topspeed = 0, trackpointCount = 0):
         self.date            = date
         self.duration        = duration
         self.distance        = distance
@@ -321,9 +325,9 @@ class Track(object):
             chunks.append(GH600.COMMANDS['setTracks'] % {'payload':payload, 'isFirst':isFirst, 'trackInfo':date+infos, 'from':Utilities.dec2hex(frome,4), 'to':Utilities.dec2hex(to,4), 'trackpoints': trackpointsConverted, 'checksum':checksum})
         return ''.join(chunks)
         
-    def fromHex(self, hex):
+    def fromHex(self, hex, timezone=utc):
         if len(hex) == 44 or len(hex) == 48:
-            self.date            = datetime.datetime(2000+Utilities.hex2dec(hex[0:2]), Utilities.hex2dec(hex[2:4]), Utilities.hex2dec(hex[4:6]), Utilities.hex2dec(hex[6:8]), Utilities.hex2dec(hex[8:10]), Utilities.hex2dec(hex[10:12]))
+            self.date            = datetime.datetime(2000+Utilities.hex2dec(hex[0:2]), Utilities.hex2dec(hex[2:4]), Utilities.hex2dec(hex[4:6]), Utilities.hex2dec(hex[6:8]), Utilities.hex2dec(hex[8:10]), Utilities.hex2dec(hex[10:12]), tzinfo=timezone)
             self.duration        = datetime.timedelta(seconds=Utilities.hex2dec(hex[12:20]))
             self.distance        = Utilities.hex2dec(hex[20:28])
             self.calories        = Utilities.hex2dec(hex[28:32])
@@ -348,12 +352,12 @@ class Track(object):
             self.trackpoints.append(parsedTrackpoint)
                                         
     def export(self, format, **kwargs):
-        format = ExportFormat(format)
-        format.exportTrack(self)
+        ef = ExportFormat(format)
+        ef.exportTrack(self)
         
         
 class TrackWithLaps(Track):
-    def __init__(self, date = '', duration = 0, distance = 0, calories = 0, topspeed = 0, trackpointCount = 0, lapCount = 0):
+    def __init__(self, date = datetime.datetime.utcnow(), duration = 0, distance = 0, calories = 0, topspeed = 0, trackpointCount = 0, lapCount = 0):
         self.lapCount = lapCount
         self.laps = []
         super(TrackWithLaps, self).__init__(date, duration,distance, calories, topspeed, trackpointCount)
@@ -388,9 +392,9 @@ class TrackWithLaps(Track):
             chunks.append(GH625.COMMANDS['setTracks'] % {'payload':payload, 'trackInfo':date+infos, 'from':Utilities.dec2hex(frome,4), 'to':Utilities.dec2hex(to,4), 'trackpoints': trackpointsConverted, 'checksum':checksum})
         return ''.join(chunks)
     
-    def fromHex(self, hex):
+    def fromHex(self, hex, timezone=utc):
         if len(hex) == 58 or len(hex) == 62:            
-            self.date            = datetime.datetime(2000+Utilities.hex2dec(hex[0:2]), Utilities.hex2dec(hex[2:4]), Utilities.hex2dec(hex[4:6]), Utilities.hex2dec(hex[6:8]), Utilities.hex2dec(hex[8:10]), Utilities.hex2dec(hex[10:12]))
+            self.date            = datetime.datetime(2000+Utilities.hex2dec(hex[0:2]), Utilities.hex2dec(hex[2:4]), Utilities.hex2dec(hex[4:6]), Utilities.hex2dec(hex[6:8]), Utilities.hex2dec(hex[8:10]), Utilities.hex2dec(hex[10:12]), tzinfo=timezone)
             self.lapCount        = Utilities.hex2dec(hex[12:14])
             self.duration        = datetime.timedelta(Utilities.hex2dec(hex[14:22]))
             self.distance        = Utilities.hex2dec(hex[22:30])
@@ -590,7 +594,9 @@ class GH600(SerialInterface):
             
     def __init__(self):
         self.config = ConfigParser.SafeConfigParser()
-        self.config.read(Utilities.getAppPrefix('config.ini'))                
+        self.config.read(Utilities.getAppPrefix('config.ini'))
+        
+        self.timezone = timezone(self.config.get('general', 'timezone'))             
                 
         #logging http://www.tiawichiresearch.com/?p=31 / http://www.red-dove.com/python_logging.html
         handler = logging.FileHandler(Utilities.getAppPrefix('GH600.log'))        
@@ -779,8 +785,7 @@ class GH600(SerialInterface):
             return True
         else:
             self.logger.error('deleting all waypoints failed')
-            return False
-            
+            return False 
 
     @serial_required
     def getNmea(self):
@@ -810,7 +815,7 @@ class GH600(SerialInterface):
     @serial_required
     def getUnitInformation(self):
         response = self._querySerial('unitInformation')
-
+                
         if len(response) == 180:
             unit = {
                 'device_name'      : Utilities.hex2chr(response[4:20]),
@@ -847,7 +852,7 @@ class GH615(GH600):
         if len(tracklist) > 8:
             tracks = Utilities.chop(tracklist[6:-2],48)#trim header, wtf?
             self.logger.info('%i tracks found' % len(tracks))    
-            return [Track().fromHex(track) for track in tracks]    
+            return [Track().fromHex(track, self.timezone) for track in tracks]    
         else:
             self.logger.info('no tracks found') 
             pass
@@ -873,7 +878,7 @@ class GH615(GH600):
                 #shoud new track be initialized?
                 if initializeNewTrack:
                     self.logger.debug('initalizing new track')
-                    track = Track().fromHex(data[6:50])
+                    track = Track().fromHex(data[6:50], self.timezone)
                     initializeNewTrack = False
                 
                 if (Utilities.hex2dec(data[50:54]) == last + 1):
@@ -933,7 +938,7 @@ class GH625(GH600):
         if len(tracklist) > 8:
             tracks = Utilities.chop(tracklist[6:-2],62)#trim header, wtf?
             self.logger.info('%i tracks found' % len(tracks))    
-            return [TrackWithLaps().fromHex(track) for track in tracks]    
+            return [TrackWithLaps().fromHex(track, self.timezone) for track in tracks]    
         else:
             self.logger.info('no tracks found') 
             pass
@@ -944,7 +949,6 @@ class GH625(GH600):
         payload = Utilities.dec2hex((len(trackIds) * 512) + 896, 4)
         numberOfTracks = Utilities.dec2hex(len(trackIds), 4) 
         checksum = Utilities.checkersum("%s%s%s" % (payload, numberOfTracks, ''.join(trackIds)))
-          
         self._writeSerial('getTracks', **{'payload':payload, 'numberOfTracks':numberOfTracks, 'trackIds':''.join(trackIds), 'checksum':checksum})
                     
         tracks = []
@@ -959,7 +963,7 @@ class GH625(GH600):
                 #shoud new track be initialized?
                 if initializeNewTrack:
                     self.logger.debug('initalizing new track')
-                    track = TrackWithLaps().fromHex(data[6:64])
+                    track = TrackWithLaps().fromHex(data[6:64], self.timezone)
                     initializeNewTrack = False
                 
                 if data[60:64] == "FFFF":
@@ -971,8 +975,7 @@ class GH625(GH600):
                     self.logger.debug('adding trackpoints %i-%i of %i' % (Utilities.hex2dec(data[60:64]), Utilities.hex2dec(data[64:68]), track.trackpointCount))
                     track.addTrackpointsFromHex(data[68:-2])
                     last = Utilities.hex2dec(data[64:68])
-                    #check if last segment of track
-                                        
+                    #check if last segment of track     
                     if last + 1 == track.trackpointCount:
                         tracks.append(track)
                         last = -1
