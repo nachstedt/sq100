@@ -170,8 +170,8 @@ ul#secondLevel li {
 }
 
 ul#secondLevel li a {
-	border:1px solid #ececec;
-	padding:7px;
+	border: 1px solid #ececec;
+	padding: 7px;
 }
 
 ul#secondLevel li a:hover {
@@ -181,10 +181,10 @@ ul#secondLevel li a:hover {
 
 #map,
 .map {
-	margin:10px 0;
-	height:400px;
-	border-top:2px solid #ececec;
-	border-bottom:2px solid #ececec;
+	margin: 10px 0;
+	height: 400px;
+	border-top: 2px solid #ececec;
+	border-bottom: 2px solid #ececec;
 	background-color: #ececec;
 }
 
@@ -233,10 +233,11 @@ tr.inputRow td select {
 	z-index: 6;
 }
 
+ul#secondLevel li a.wait,
 a.wait {
 	background-image: url(/static/clock.gif);
 	background-repeat: no-repeat;
-	padding-left:12px;
+	padding-left: 16px;
 	background-position: 0 50%;
 }
 
