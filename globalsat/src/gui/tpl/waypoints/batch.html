@@ -1,0 +1,113 @@
+<script src="http://maps.google.com/maps?file=api&amp;v=2&amp;key=ABQIAAAAoOnC-lqJNSFyH3kfjFZRnxRi_j0U6kJrkFvY4-OX2XYmEAa76BR1gHXtME6-_ixTZJUWTuVeHfPJlw" type="text/javascript"></script>
+<script src="/static/global.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+<!--
+window.addEvent('domready', function() {                	
+	var library = [];
+	<% for waypoint in waypointLibrary %>
+		library.include(new GLatLng($waypoint.latitude, $waypoint.longitude));
+	<% endfor %>
+
+	library.each(function(waypoint, i){	
+		mwm = new Map({
+			map: document.getElements('.map')[i],
+			latitude_field: document.getElements('input[name=latitude]')[i],
+			longitude_field: document.getElements('input[name=longitude]')[i],
+			altitude_field: document.getElements('input[name=altitude]')[i],
+			center: waypoint
+		});
+		mwm.place_marker(waypoint);
+	    mwm.setup_marker_placement();
+	})
+	
+	document.getElements('.delete').addEvent('click', function(e){
+		this.getParent('tr').getNext().dispose();
+		this.getParent('tr').dispose();
+	});
+	
+	document.getElements('.showMap').each(function(element, i){
+		element.getParent('tr').getNext().getElement('.map').slide('hide');
+		element.addEvent('click', function(e){		
+			this.getParent('tr').getNext().getElement('.map').slide('toggle');
+		});
+	})
+
+	$('new').addEvent('click', function(e){
+		var orig_inputRow = document.getElement('table tbody').getFirst();
+		
+		var inputRow = orig_inputRow.clone().cloneEvents(orig_inputRow)
+		var map = new Element('div', {class: 'map'});
+		var mapRow = new Element('td', {colspan: 6}).adopt(map);
+		
+		inputRow.inject(document.getElement('table tbody'), 'bottom');
+		mapRow.inject(document.getElement('table tbody'), 'bottom');
+		
+		map.slide('hide');
+		   
+		inputRow.getElements('input').set('value','');
+
+		inputRow.getElement('.delete').addEvent('click', function(e){
+			this.getParent('tr').getNext().dispose();
+			this.getParent('tr').dispose();
+		});
+		inputRow.getElement('.showMap').addEvent('click', function(e){
+			this.getParent('tr').getNext().getElement('.map').slide('toggle');
+		});
+		
+		mwm = new Map({
+			map: map,
+			latitude_field: document.getElements('input[name=latitude]').getLast(),
+			longitude_field: document.getElements('input[name=longitude]').getLast(),
+			altitude_field: document.getElements('input[name=altitude]').getLast()
+		});
+	    mwm.setup_marker_placement();
+	});
+})
+//-->
+</script>
+
+<h1>edit multiple waypoints</h1>
+
+<form action="doBatch/" method="post">
+<table class="waypoints" id="local">
+<thead>
+    <tr>
+        <th class="w10">title</th>
+        <th class="w20">latitude</th>
+        <th class="w20">longitude</th>
+        <th class="w10">alt</th>
+        <th>type</th>
+        <th>operation</th>
+    </tr>
+</thead>
+
+<tbody>
+<% for waypoint in waypointLibrary %>
+    <tr class="inputRow">
+        <td><input name="title" type="text" value="$waypoint.title" maxlength="6" /></td>
+        <td><input name="latitude" type="text" value="$waypoint.latitude" /></td>
+        <td><input name="longitude" type="text" value="$waypoint.longitude" /></td>
+        <td><input name="altitude" type="text" value="$waypoint.altitude" /></td>
+        <td>
+        <select name="type" id="type">
+        <% for i, type in waypointTypes.items() %>
+    		<option value="$i" <% if i == waypoint.type %>selected="selected"<% endif %>>$type</option>
+   		<% endfor %>
+   		</select>
+    	</td>
+        <td><a href="#" class="showMap">map</a> | <a href="#" class="delete">delete</a></td>
+    </tr>
+    <tr class="mapRow"><td colspan="6"><div class="map"></div></td></tr>
+<% endfor %>
+</tbody>
+
+<tfoot>
+    <tr>
+    	<td colspan="4"><a id="new" href="#">add new</a></td>
+        <td colspan="3"><input class="wait" type="submit" name="operation" value="save &amp; copy to watch" /> | <input type="submit" name="operation" value="save" /></td>
+    </tr>
+</tfoot>
+
+</table>
+</form>

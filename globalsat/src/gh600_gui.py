@@ -62,7 +62,7 @@ class Waypoints:
     
     @cherrypy.expose
     def doAdd(self, latitude, longitude, altitude, title, type = 0, operation = "save"):                
-        w = Waypoint(latitude, longitude, altitude, title, type)
+        w = Waypoint(latitude, longitude, altitude, title, int(type))
         waypoints = self.getWaypointLibrary()
         waypoints.append(w)
         self.saveWaypointLibrary(waypoints)
@@ -89,6 +89,26 @@ class Waypoints:
         
         if operation != "save":
             self.saveWaypointsToGh([w])
+        raise cherrypy.HTTPRedirect('/waypoints')
+    
+    @cherrypy.expose
+    def batch(self):
+        t = HTMLTemplate('waypoints/batch.html')
+        waypointLibrary = self.getWaypointLibrary()
+        return t.render(waypointLibrary = waypointLibrary, waypointTypes = Waypoint.TYPES)
+
+    @cherrypy.expose
+    def doBatch(self, latitude, longitude, altitude, title, type, operation = "save"):
+        waypoints = []
+        if isinstance(latitude, str):
+            waypoints.append(Waypoint(latitude, longitude, altitude, title, type))
+        else:
+            for latitude, longitude, altitude, title, type in zip(latitude, longitude, altitude, title, type):
+                waypoints.append(Waypoint(latitude, longitude, altitude, title, type))
+        self.saveWaypointLibrary(waypoints)
+        
+        if operation != "save":
+            self.saveWaypointsToGh(waypoints)
         raise cherrypy.HTTPRedirect('/waypoints')
         
     @cherrypy.expose
@@ -181,14 +201,14 @@ class Error:
 
 print "Connecting to your GH..."
 gh = GH600()
-if gh.testConnectivity():
-    #SITEMAP
-    root = Root()
-    root.waypoints = Waypoints()
-    root.settings = Settings()
-else:
-    root = Error()
-    root.settings = Settings()
+#if gh.testConnectivity():
+#SITEMAP
+root = Root()
+root.waypoints = Waypoints()
+root.settings = Settings()
+#else:
+#    root = Error()
+#    root.settings = Settings()
 cherrypy.tree.mount(root, config="gui/app.conf")
 
 def launch_browser():

@@ -1,17 +1,13 @@
 <script src="http://maps.google.com/maps?file=api&amp;v=2&amp;key=ABQIAAAAoOnC-lqJNSFyH3kfjFZRnxRi_j0U6kJrkFvY4-OX2XYmEAa76BR1gHXtME6-_ixTZJUWTuVeHfPJlw" type="text/javascript"></script>
 
-<script src="/static/global.js" type="text/javascript"></script>
-
 <script type="text/javascript">
 <!--
-window.addEvent('domready', function() {		
+window.addEvent('domready', function() {                
     var center = new GLatLng($waypoint.latitude, $waypoint.longitude);
-    mwm = new Map({
-    	center: center,
-    });
+    mwm = new Map({center: center});
     mwm.place_marker(center);
-	mwm.setup_marker_placement();
-	mwm.setup_geocoder($('geocoder'));
+    mwm.setup_marker_placement();
+    mwm.setup_geocoder($('geocoder'));
 })
 //-->
 </script>
@@ -50,7 +46,7 @@ window.addEvent('domready', function() {
     
     <input name="id" type="hidden" value="$waypoint.id">
     <p class="buttons">
-    	<a href="../doDelete/$waypoint.id">delete</a> | <input type="submit" name="operation" value="save & copy to watch" /> | <input type="submit" name="operation" value="save" />
+    	<a href="../doDelete/$waypoint.id">delete</a> | <input class="wait" type="submit" name="operation" value="save & copy to watch" /> | <input type="submit" name="operation" value="save" />
     </p>
 </form>
 </fieldset>

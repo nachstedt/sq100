@@ -1,3 +1,20 @@
+window.addEvent('domready', function() {		
+	document.getElements('.wait').addEvent('click', function(e){
+		//preload activity-animation
+		new Element('img', {'src':'/static/activity.gif'})
+		
+		var modal = new Element('div', 
+			{'class': 'modal', styles: {opacity: .5, width: window.getSize().x, height: window.getSize().y}}
+		).inject(document.getElement('body'), 'top');
+		
+		var hold = new Element('div', 
+			{html: 'Please hold ... sending and receiving data', 'class': 'hold'}
+		).inject(modal, 'after');
+		
+		hold.tween('top', [-100,0]);
+	})
+})
+
 var Map = new Class({
     Implements: Options,
     
@@ -6,7 +23,7 @@ var Map = new Class({
         center: null,
         latitude_field: 'latitude',
         longitude_field: 'longitude',
-        altitude_field: 'altitude',
+        altitude_field: 'altitude'
     },
 
     initialize: function(options){
@@ -16,6 +33,9 @@ var Map = new Class({
 		this.map.setCenter($pick(this.options.center, new GLatLng(37.4419, -122.1419)), 10);
 		this.map.disableDoubleClickZoom();
 		this.map.enableScrollWheelZoom();
+		this.map.addControl(new GScaleControl());
+		this.map.addControl(new GSmallZoomControl());
+		this.map.addControl(new GMapTypeControl());
 		
 		GMap2.prototype.centerAndZoomOnBounds = function(bounds){
 		   var center_lat = (bounds.getNorthEast().lat() + bounds.getSouthWest().lat())/2;

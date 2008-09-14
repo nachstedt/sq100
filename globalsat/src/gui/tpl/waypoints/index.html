@@ -37,6 +37,7 @@
 
 <ul id="secondLevel">
 	<li><a href="add">create a new waypoint</a></li>
+	<li><a href="batch">batch mode</a></li>
 	<li><a href="doDeleteAll">delete all waypoints from watch</a></li>
 </ul>
 
@@ -78,7 +79,7 @@
 </tbody>
 <tfoot>
     <tr>
-        <td colspan="6"><div class="selectAll">select all</div></td>
+        <td colspan="6"><a href="#" class="selectAll">select all</a></td>
         <td><input type="submit" value="Copy selected to watch" /></td>
     </tr>
 </tfoot>
@@ -94,7 +95,7 @@ You have not created any waypoints yet. <a href="add">create some!</a>
 <h2><img src="http://labs.google.com/ridefinder/images/mm_20_red.png" /> waypoints on your watch</h2>
 
 <% if remoteWaypoints %>
-<form method="post" action="doCopyFrom">
+<form method="post" action="doCopyToLibrary">
 <table class="waypoints" id="remote">
 <thead>
     <tr>
@@ -122,7 +123,7 @@ You have not created any waypoints yet. <a href="add">create some!</a>
 </tbody>
 <tfoot>
     <tr>
-        <td colspan="6"><div class="selectAll">select all</div></td>
+        <td colspan="6"><a href="#" class="selectAll">select all</a></td>
         <td><input type="submit" value="Copy selected to library" /></td>
     </tr>
 </tfoot>
