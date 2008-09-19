@@ -884,10 +884,10 @@ class GH615(GH600):
                 if (Utilities.hex2dec(data[50:54]) == last + 1):
                     self.logger.debug('getting trackpoints %d-%d' % (Utilities.hex2dec(data[50:54]), Utilities.hex2dec(data[54:58])))
                     track.addTrackpointsFromHex(data[58:-2])
-                    #remeber last trackpoint
+                    #remember last trackpoint
                     last = Utilities.hex2dec(data[54:58])
                     #check if last segment of track
-                    if len(data) < 4150:
+                    if last + 1 == track.trackpointCount:
                         tracks.append(track)
                         last = -1
                         initializeNewTrack = True
