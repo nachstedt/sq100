@@ -881,7 +881,8 @@ class GH615(GH600):
                     track = Track().fromHex(data[6:50], self.timezone)
                     initializeNewTrack = False
                 
-                if (Utilities.hex2dec(data[50:54]) == last + 1):
+                if len(data) < 2070:
+                #if (Utilities.hex2dec(data[50:54]) == last + 1):
                     self.logger.debug('getting trackpoints %d-%d' % (Utilities.hex2dec(data[50:54]), Utilities.hex2dec(data[54:58])))
                     track.addTrackpointsFromHex(data[58:-2])
                     #remember last trackpoint
