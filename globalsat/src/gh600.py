@@ -23,8 +23,15 @@ class Utilities():
         return hex
     
     @classmethod
-    def hex2dec(self, s):
-        return int(s, 16)
+    def hex2dec(self, hex):
+        return int(hex, 16)
+    
+    @classmethod
+    def hex2signedDec(self, hex):
+        value = self.hex2dec(hex)
+        if value > 32767:
+            value = value - 32767 - 2
+        return int(value)
     
     @classmethod
     def hex2chr(self, hex):
@@ -149,7 +156,7 @@ class Trackpoint(Point):
         if len(hex) == 30:
             self.latitude  = Coordinate().fromHex(hex[0:8])
             self.longitude = Coordinate().fromHex(hex[8:16])
-            self.altitude  = Utilities.hex2dec(hex[16:20])
+            self.altitude  = Utilities.hex2signedDec(hex[16:20])
             self.speed     = Utilities.hex2dec(hex[20:24])/100
             self.heartrate = Utilities.hex2dec(hex[24:26])
             self.interval  = datetime.timedelta(seconds=Utilities.hex2dec(hex[26:30])/10.0)       
@@ -232,7 +239,7 @@ class Waypoint(Point):
                 
             self.latitude = Coordinate().fromHex(hex[20:28])
             self.longitude = Coordinate().fromHex(hex[28:36])
-            self.altitude = Utilities.hex2dec(hex[16:20])
+            self.altitude = Utilities.hex2signedDec(hex[16:20])
             self.title = safeConvert(hex[0:2])+safeConvert(hex[2:4])+safeConvert(hex[4:6])+safeConvert(hex[6:8])+safeConvert(hex[8:10])+safeConvert(hex[10:12])
             self.type = Utilities.hex2dec(hex[12:16])
             

@@ -30,8 +30,8 @@ def choose():
 What do you want to do?\n\
 ------TRACKS-------\n\
 [a]  = get list of all tracks\n\
-[b]  = export a single track | [b?] to select format or [b <format>]\n\
-[c]  = export all tracks     | [c?] to select format or [c <format>]\n\
+[b]  = select and export tracks (to default format) | [b?] to select format or [b <format>]\n\
+[c]  = export all tracks (to default format)        | [c?] to select format or [c <format>]\n\
 [d]  = upload tracks\n\
 -----WAYPOINTS-----\n\
 [e]  = download waypoints\n\
@@ -41,7 +41,7 @@ What do you want to do?\n\
 [hh] = format waypoints\n\
 [i]  = get device information\n\
 -------------------\n\
-[q]=quit"""
+[q] = quit"""
 
     command = raw_input("=>").strip()
     
@@ -226,45 +226,46 @@ def main():
         if args[0] == "a":
             tracklist()
             
-        if args[0] == "b":            
+        elif args[0] == "b":            
             if not options.tracks:
                 parser.error("use option '--track' to select track")
                 
             tracks = gh.getTracks(options.tracks)
             gh.exportTracks(tracks, gh.config.get('export', 'default'), gh.config.get('export', 'path'), merge = options.merge)
             
-        if args[0] == "c":        
+        elif args[0] == "c":        
             tracks = gh.getAllTracks()
             gh.exportTracks(tracks, gh.config.get('export', 'default'), gh.config.get('export', 'path'), merge = options.merge)
             
-        if args[0] == "d":
+        elif args[0] == "d":
             if not options.input:
                 parser.error("use option '--input' to select files")
             tracks = gh.importTracks(options.input)
             results = gh.setTracks(tracks)
         
-        if args[0] == "e":
+        elif args[0] == "e":
             waypoints = gh.getWaypoints()    
             results = gh.exportWaypoints(waypoints, path=options.output)
             
-        if args[0] == "f":
+        elif args[0] == "f":
             waypoints = gh.importWaypoints(path=options.input[0])
             results = gh.setWaypoints(waypoints)
             print 'Imported Waypoints %i' % results
             
-        if args[0] == "gg":
+        elif args[0] == "gg":
             warning = raw_input("warning, DELETING ALL TRACKS").strip()
             results = gh.formatTracks()
             
-        if args[0] == "hh":
+        elif args[0] == "hh":
             warning = raw_input("warning, DELETING ALL WAYPOINTS").strip()
             results = gh.formatWaypoints()
                     
-        if args[0] == "i":
+        elif args[0] == "i":
             return gh.getUnitInformation()
-            
+        
         else:
             parser.error("invalid argument, try -h or see README for help")
+    
         
 if __name__ == "__main__":
     main()
