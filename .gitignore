@@ -1,0 +1,13 @@
+build
+dist
+.cache
+.project
+.pydevproject
+.coverage
+.eggs
+.settings
+sq100.egg-info
+*.gpx
+*.log
+*.pyc
+

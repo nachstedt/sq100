@@ -1,0 +1,3 @@
+[run]
+omit = sq100/test/*
+
