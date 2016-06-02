@@ -1,0 +1,7 @@
+lib
+bin
+include
+pip-selfcheck.json
+pyvenv.cfg
+.project
+.pydevproject
