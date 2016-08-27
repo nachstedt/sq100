@@ -3,9 +3,5 @@ python:
     - "3.5"
 install: 
     - "pip install -r requirements.txt"
-    - "pip install coverage"
-    - "pip install coveralls"
 script: 
-    - "coverage run --source=sq100 setup.py test"
-after_success:
-    coveralls
+    - "python setup.py test"
