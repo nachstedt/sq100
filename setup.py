@@ -6,21 +6,6 @@ import codecs
 import os
 import sys
 
-import sandman
-
-here = os.path.abspath(os.path.dirname(__file__))
-
-def read(*filenames, **kwargs):
-    encoding = kwargs.get('encoding', 'utf-8')
-    sep = kwargs.get('sep', '\n')
-    buf = []
-    for filename in filenames:
-        with io.open(filename, encoding=encoding) as f:
-            buf.append(f.read())
-    return sep.join(buf)
-
-long_description = read('README.txt', 'CHANGES.txt')
-
 class PyTest(TestCommand):
     def finalize_options(self):
         TestCommand.finalize_options(self)
@@ -34,7 +19,7 @@ class PyTest(TestCommand):
 
 setup(
     name='sq100',
-    version=sandman.__version__,
+    version="0.0.1",
     url='http://github.com/tnachstedt/sq100/',
     license='Apache Software License',
     author='Timo Nachstedt',
@@ -43,7 +28,9 @@ setup(
     cmdclass={'test': PyTest},
     author_email='mail@nachstedt.com',
     description='Alternative read out for the SQ 100 heart rate monitor',
-    long_description=long_description,
+    long_description="""
+      Alternative read out for the SQ 100 heart rate monitor
+    """,
     packages=['sq100'],
     include_package_data=True,
     platforms='any',
