@@ -3,7 +3,7 @@ import os, sys, glob
 
 import math
 import time, datetime
-import ConfigParser
+import configparser
 import logging
 from decimal import Decimal
 
@@ -505,7 +505,7 @@ def serial_required(function):
         try:
             x._connectSerial()
             return function(x, *args, **kw)
-        except GH600SerialException, e:
+        except GH600SerialException as e:
             raise
         finally:
             x._disconnectSerial()
@@ -811,7 +811,7 @@ class GH600(SerialInterface):
         while not line.startswith("$GPGGA"):
             self.logger.debug("waiting at serialport: %i" % self.serial.inWaiting())
             line = self.serial.readline()
-            print line
+            print(line)
         
         # calculate our lat+long
         tokens = line.split(",")
