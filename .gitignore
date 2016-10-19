@@ -5,3 +5,9 @@ pip-selfcheck.json
 pyvenv.cfg
 .project
 .pydevproject
+.coverage
+.eggs
+.settings
+sq100.egg-info
+*.pyc
+
