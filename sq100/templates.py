@@ -128,10 +128,10 @@ r"""
 """
 import sys
 import re
-import __builtin__ as builtins
-from compiler import ast, parse
-from compiler.consts import SC_LOCAL, SC_GLOBAL, SC_FREE, SC_CELL
-from compiler.pycodegen import ModuleCodeGenerator
+import builtins
+# from compiler import ast, parse
+# from compiler.consts import SC_LOCAL, SC_GLOBAL, SC_FREE, SC_CELL
+# from compiler.pycodegen import ModuleCodeGenerator
 from tokenize import PseudoToken
 #from werkzeug import utils
 #from werkzeug._internal import _decode_unicode
@@ -248,7 +248,7 @@ class Parser(object):
             expr = '\xef\xbb\xbf' + expr.encode('utf-8')
         try:
             node = parse(expr, type)
-        except SyntaxError, e:
+        except SyntaxError as e:
             raise TemplateSyntaxError(str(e), self.filename,
                                       self.lineno + e.lineno - 1)
         nodes = [node]
@@ -504,9 +504,9 @@ class Template(object):
         context = Context(ns, self.encoding, self.errors)
                 
         if sys.version_info < (2, 4):
-            exec self.code in context.runtime, ns
+            exec(self.code, context.runtime, ns)
         else:
-            exec self.code in context.runtime, context
+            exec(self.code, context.runtime, context)
         return context.get_value(self.unicode_mode)
 
     def substitute(self, *args, **kwargs):
