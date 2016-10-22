@@ -45,7 +45,7 @@ What do you want to do?\n\
 -------------------\n\
 [q] = quit""")
 
-    command = raw_input("=>").strip()
+    command = input("=>").strip()
     
     if command == "a":
         print("Getting tracklist")
