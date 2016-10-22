@@ -13,6 +13,9 @@ from pytz import timezone, utc
 from templates import Template
 from gpxParser import GPXParser
 
+# new imports
+import struct
+import collections
 
 class Utilities():
     @classmethod
@@ -67,7 +70,7 @@ class Utilities():
     
     @classmethod
     def chop(self, s, chunk):
-        return [s[i*chunk:(i+1)*chunk] for i in range((len(s)+chunk-1)/chunk)]
+        return [s[i*chunk:(i+1)*chunk] for i in range((len(s)+chunk-1)//chunk)]
     
     @classmethod 
     def checkersum(self, hex):
@@ -294,7 +297,8 @@ class Lap(object):
         
 
 class Track(object):    
-    def __init__(self, date = datetime.datetime.utcnow(), duration = datetime.timedelta(), distance = 0, calories = 0, topspeed = 0, trackpointCount = 0):
+    def __init__(self, date = datetime.datetime.utcnow(), duration = datetime.timedelta(), distance = 0, calories = 0, topspeed = 0, trackpointCount = 0, id=0):
+        self.id              = id
         self.date            = date
         self.duration        = duration
         self.distance        = distance
@@ -364,10 +368,10 @@ class Track(object):
         
         
 class TrackWithLaps(Track):
-    def __init__(self, date = datetime.datetime.utcnow(), duration = 0, distance = 0, calories = 0, topspeed = 0, trackpointCount = 0, lapCount = 0):
+    def __init__(self, date = datetime.datetime.utcnow(), duration = 0, distance = 0, calories = 0, topspeed = 0, trackpointCount = 0, lapCount = 0, id=0):
         self.lapCount = lapCount
         self.laps = []
-        super(TrackWithLaps, self).__init__(date, duration,distance, calories, topspeed, trackpointCount)
+        super(TrackWithLaps, self).__init__(date, duration,distance, calories, topspeed, trackpointCount, id)
     
     def __str__(self):
         return "%02i %s %08i %08i %08i %08i %04i" % (self.id, self.date, self.distance, self.calories, self.topspeed, self.trackpointCount, self.lapCount)
@@ -540,7 +544,7 @@ class SerialInterface():
                 hex = command
             
             self.logger.debug("writing to serialport: %s" % hex)
-            self.serial.write(Utilities.hex2chr(hex))
+            self.serial.write(bytearray.fromhex(hex))
             #self.serial.sendBreak(2)
             time.sleep(self._sleep)
             self.logger.debug("waiting at serialport: %i" % self.serial.inWaiting())
@@ -548,7 +552,8 @@ class SerialInterface():
         #    raise GH600SerialException
     
     def _readSerial(self, size = 2070):
-        data = Utilities.chr2hex(self.serial.read(size))
+        data = self.serial.read(size)
+        print(data)
         self.logger.debug("serial port returned: %s" % data if len(data) < 30 else "%s... (truncated)" % data[:30])
         return data
     
@@ -600,7 +605,7 @@ class GH600(SerialInterface):
     }
             
     def __init__(self):
-        self.config = ConfigParser.SafeConfigParser()
+        self.config = configparser.SafeConfigParser()
         self.config.read(Utilities.getAppPrefix('config.ini'))
         
         self.timezone = timezone(self.config.get('general', 'timezone'))             
@@ -942,14 +947,27 @@ class GH625(GH600):
     @serial_required
     def getTracklist(self):
         tracklist = self._querySerial('getTracklist')
+
+        payload_length, = struct.unpack(">H", tracklist[1:3])
+        number_tracks = payload_length//29 
+        self.logger.info('%i tracks found' % number_tracks)
         
-        if len(tracklist) > 8:
-            tracks = Utilities.chop(tracklist[6:-2],62)#trim header, wtf?
-            self.logger.info('%i tracks found' % len(tracks))    
-            return [TrackWithLaps().fromHex(track, self.timezone) for track in tracks]    
-        else:
-            self.logger.info('no tracks found') 
-            pass
+        TrackHeader = collections.namedtuple('TrackHeader', [
+            'year', 'month', 'day', 'hour', 'minute', 'second', 'total_points', 
+            'total_time', 'distance', 'lap_count', 'unused_1', 'id', 'unused_2'])
+        
+        return [
+            TrackWithLaps(
+                date=datetime.datetime(2000+track.year, track.month, track.day,
+                                       track.hour, track.minute, track.second),
+                lapCount=track.lap_count,
+                duration=datetime.timedelta(track.total_time),
+                distance=track.distance,
+                trackpointCount=track.total_points,
+                id=track.id)
+            for track in map(
+                TrackHeader._make, 
+                 struct.iter_unpack(">6B3IH7s2B", tracklist[3:-1]))]
         
     @serial_required
     def getTracks(self, trackIds):

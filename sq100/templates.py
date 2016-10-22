@@ -442,15 +442,15 @@ class Context(object):
         del self._namespace[key]
 
 
-class TemplateCodeGenerator(ModuleCodeGenerator):
-
-    def __init__(self, node, filename):
-        ModuleCodeGenerator.__init__(self, transform(node, filename))
-
-    def _nameOp(self, prefix, name):
-        if name in runtime_vars:
-            return self.emit(prefix + '_GLOBAL', name)
-        return ModuleCodeGenerator._nameOp(self, prefix, name)
+# class TemplateCodeGenerator(ModuleCodeGenerator):
+# 
+#     def __init__(self, node, filename):
+#         ModuleCodeGenerator.__init__(self, transform(node, filename))
+# 
+#     def _nameOp(self, prefix, name):
+#         if name in runtime_vars:
+#             return self.emit(prefix + '_GLOBAL', name)
+#         return ModuleCodeGenerator._nameOp(self, prefix, name)
 
 
 class Template(object):
