@@ -2,8 +2,8 @@
 
 import glob, os, sys
 from optparse import OptionParser
-
 from gh600 import GH600, ExportFormat, Utilities
+import tabulate
 
 gh = GH600()
 
@@ -11,9 +11,13 @@ def tracklist():
     tracks = gh.getTracklist()
     #display
     if tracks:
-        print('id             date          distance calories topspeed trkpnts  laps')
-        for track in tracks:
-            print(str(track))
+        table = [[track.id, track.date, track.distance, track.duration, 
+                  track.calories, track.topspeed, track.trackpointCount, 
+                  track.lapCount]
+                 for track in tracks]
+        headers = ["id", "date", "distance", "duration", "calories", "topspeed",
+                   "trkpnts", "laps"]
+        print(tabulate.tabulate(table, headers=headers))
     else:
         print('no tracks found')
     pass
