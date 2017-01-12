@@ -10,7 +10,9 @@ import tabulate
 gh = GH600()
 
 def tracklist():
+    gh.connect_serial()
     tracks = gh.getTracklist()
+    gh.disconnect_serial()
     #display
     if tracks:
         table = [[track.id, track.date, track.distance, track.duration, 

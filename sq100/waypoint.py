@@ -1,3 +1,6 @@
+from point import Point
+
+
 class Waypoint(Point):
     TYPES = {
         0:  'DOT',

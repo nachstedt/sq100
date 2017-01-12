@@ -1,5 +1,4 @@
 from gh600 import GH600
-from serial_required import serial_required
 from track_with_laps import TrackWithLaps
 from utilities import Utilities
 
@@ -15,18 +14,20 @@ class GH625(GH600):
        'setTracksLaps': '02%(payload)s90%(trackInfo)s%(laps)s%(nrOfTrackpoints)s%(checksum)s'
     })
     
-    @serial_required
     def getTracklist(self):
-        tracklist = self._querySerial('getTracklist')
+        # tracklist = self._querySerial('getTracklist')
 
-        payload_length, = struct.unpack(">H", tracklist[1:3])
+        command = b'\x02\x00\x01\x78\x79'
+        self.logger.debug("writing to serialport: %s" % command)
+        self.serial.write(command)
+        data = self.serial.read(2070)
+        payload_length, = struct.unpack(">H", data[1:3])
         number_tracks = payload_length//29 
         self.logger.info('%i tracks found' % number_tracks)
-        
         TrackHeader = collections.namedtuple('TrackHeader', [
             'year', 'month', 'day', 'hour', 'minute', 'second', 'total_points', 
-            'total_time', 'distance', 'lap_count', 'unused_1', 'id', 'unused_2'])
-        
+            'total_time', 'distance', 'lap_count', 'unused_1', 'id', 
+            'unused_2'])
         return [
             TrackWithLaps(
                 date=datetime.datetime(2000+track.year, track.month, track.day,
@@ -38,9 +39,8 @@ class GH625(GH600):
                 id=track.id)
             for track in map(
                 TrackHeader._make, 
-                 struct.iter_unpack(">6B3IH7s2B", tracklist[3:-1]))]
+                 struct.iter_unpack(">6B3IH7s2B", data[3:-1]))]
         
-    @serial_required
     def getTracks(self, trackIds):
         trackIds = [Utilities.dec2hex(str(id), 4) for id in trackIds]
         payload = Utilities.dec2hex((len(trackIds) * 512) + 896, 4)
@@ -94,7 +94,6 @@ class GH625(GH600):
         self.logger.info('number of tracks %d' % len(tracks))
         return tracks
     
-    @serial_required
     def setTracks(self, tracks):        
         for track in tracks:
             lapChunk = hex(track)[:72 + (track.lapCount * 44)]
