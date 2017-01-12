@@ -19,17 +19,23 @@
 # import struct
 # import collections
 
+from export_format import ExportFormat
+from gh600_parse_exception import GH600ParseException
 from gh600_serial_exception import GH600SerialException
-from serial_interface import SerialInterface
-from serial_required import serial_required
 from utilities import Utilities
+from waypoint import Waypoint
 
 import configparser
+import glob
 import logging
+import math
+import os
 import pytz
+import serial
+import time
 
 
-class GH600(SerialInterface):
+class GH600(object):
     """api for Globalsat GH600"""
     
     COMMANDS = {
@@ -73,6 +79,11 @@ class GH600(SerialInterface):
         outputHandler.setFormatter(logging.Formatter(format))
         outputHandler.setLevel(level)
         self.logger.addHandler(outputHandler)
+        
+        self.serial = serial.Serial()
+        self.serial.port = self.config.get("serial", "comport") 
+        self.serial.baudrate = self.config.getint("serial", "baudrate")
+        self.serial.timeout = self.config.getint("serial", "timeout")
             
         if self.__class__ is GH600:
             if self.config.has_option("general", "firmware"):
@@ -88,7 +99,18 @@ class GH600(SerialInterface):
                 from gh625 import GH625
                 self.__class__ = GH625
         
-    @serial_required
+    def connect_serial(self):
+        try:
+            self.serial.open()
+            self.logger.debug("serial connection on " + self.serial.portstr)
+        except serial.SerialException:
+            self.logger.critical("error establishing serial connection")
+            raise GH600SerialException
+        
+    def disconnect_serial(self):
+        self.serial.close()
+        self.logger.debug("serial connection closed")
+        
     def getProductModel(self):
         try:
             response = self._querySerial('whoAmI')
@@ -97,8 +119,7 @@ class GH600(SerialInterface):
             return product
         except GH600SerialException: #no response received, assuming command was not understood => old firmware
             return "GH-615"
-        
-    @serial_required
+
     def testConnectivity(self):
         try:
             self._querySerial('whoAmI')
@@ -116,7 +137,6 @@ class GH600(SerialInterface):
             formats.append(e)
         return formats
         
-    @serial_required
     def getTracklist(self):
         raise NotImplemented('This is an abstract method, please instantiate a subclass')
     
@@ -127,7 +147,6 @@ class GH600(SerialInterface):
     def getAllTracks(self):
         return self.getTracks(self.getAllTrackIds())
     
-    @serial_required
     def getTracks(self, trackIds):
         raise NotImplemented('This is an abstract method, please instantiate a subclass')
     
@@ -159,11 +178,9 @@ class GH600(SerialInterface):
         gpx = GPXParser(track)
         return gpx.tracks
     
-    @serial_required
     def setTracks(self, tracks):
         raise NotImplemented('This is an abstract method, please instantiate a subclass')
 
-    @serial_required
     def formatTracks(self):
         self._writeSerial('formatTracks')
         #wait long for response
@@ -177,7 +194,6 @@ class GH600(SerialInterface):
             self.logger.error('format not successful')
             return False
         
-    @serial_required
     def getWaypoints(self):
         response = self._querySerial('getWaypoints')            
         waypoints = Utilities.chop(response[6:-2], 36) #trim junk
@@ -214,7 +230,6 @@ class GH600(SerialInterface):
         self.logger.info('Successfully read waypoints %i' % len(waypoints)) 
         return waypoints
     
-    @serial_required
     def setWaypoints(self, waypoints):                               
         waypointsConverted = ''.join([hex(waypoint) for waypoint in waypoints])
         numberOfWaypoints = Utilities.dec2hex(len(waypoints), 4)
@@ -231,7 +246,6 @@ class GH600(SerialInterface):
             self.logger.error('error uploading waypoints')
             return False
 
-    @serial_required
     def formatWaypoints(self):
         self._writeSerial('formatWaypoints')
         time.sleep(10)
@@ -244,7 +258,6 @@ class GH600(SerialInterface):
             self.logger.error('deleting all waypoints failed')
             return False 
 
-    @serial_required
     def getNmea(self):
         #http://regexp.bjoern.org/archives/gps.html
         #looks interesting
@@ -269,7 +282,6 @@ class GH600(SerialInterface):
         lng = dmmm2dec(float(tokens[4]),tokens[5]) #[4] is long in deg+minutes, [5] is {N|S|W|E}
         return lat, lng
     
-    @serial_required
     def getUnitInformation(self):
         response = self._querySerial('unitInformation')
                 
