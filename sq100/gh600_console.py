@@ -2,7 +2,9 @@
 
 import glob, os, sys
 from optparse import OptionParser
-from gh600 import GH600, ExportFormat, Utilities
+from gh600 import GH600
+from export_format import ExportFormat
+from utilities import Utilities
 import tabulate
 
 gh = GH600()
