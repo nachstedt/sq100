@@ -63,7 +63,7 @@ What do you want to do?\n\
         else:
             tracklist()
         
-        picks = raw_input("enter trackID(s) [space delimited] ").strip()
+        picks = input("enter trackID(s) [space delimited] ").strip()
         #adds the slice notation for selecting tracks, i.e. [2:4] or [:-4] or [3]
         if ":" in picks:
             lower, upper = picks.split(':')
@@ -93,7 +93,7 @@ What do you want to do?\n\
         ef = ExportFormat(format)
         merge = False
         if ef.hasMultiple and len(trackIds) > 1:
-            merge = raw_input("Do you want to merge all tracks into a single file? [y/n]: ").strip()
+            merge = input("Do you want to merge all tracks into a single file? [y/n]: ").strip()
             merge = True if merge == "y" else False
         
         tracks = gh.getTracks(trackIds)
