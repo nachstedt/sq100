@@ -436,7 +436,7 @@ class ExportFormat(object):
     def __init__(self, format):
         if os.path.exists(Utilities.getAppPrefix('exportTemplates', '%s.txt' % format)):
             
-            templateConfig = ConfigParser.SafeConfigParser({
+            templateConfig = configparser.SafeConfigParser({
                 'nicename':"%(default)s",
                 'extension':"%(default)s",
                 'hasMultiple': "false",
@@ -961,7 +961,7 @@ class GH625(GH600):
                 date=datetime.datetime(2000+track.year, track.month, track.day,
                                        track.hour, track.minute, track.second),
                 lapCount=track.lap_count,
-                duration=datetime.timedelta(track.total_time),
+                duration=datetime.timedelta(seconds=track.total_time/10),
                 distance=track.distance,
                 trackpointCount=track.total_points,
                 id=track.id)
