@@ -1,4 +1,7 @@
-from gh600_exception import GH600Exception
+
+
+class GH600Exception(Exception):
+    pass
 
 
 class GH600ParseException(GH600Exception):
@@ -12,3 +15,7 @@ class GH600ParseException(GH600Exception):
             return "Error parsing %s: Got %i, expected %i" % (self.what, self.length, self.expected) 
         else:
             return super(GH600ParseException, self).__str__()
+
+
+class GH600SerialException(GH600Exception):
+    pass
