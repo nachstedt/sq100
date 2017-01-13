@@ -1,21 +1,10 @@
 from __future__ import print_function
 from setuptools import setup, find_packages
-from setuptools.command.test import test as TestCommand
 import io
 import codecs
 import os
 import sys
 
-class PyTest(TestCommand):
-    def finalize_options(self):
-        TestCommand.finalize_options(self)
-        self.test_args = []
-        self.test_suite = True
-
-    def run_tests(self):
-        import pytest
-        errcode = pytest.main(self.test_args)
-        sys.exit(errcode)
 
 setup(
     name='sq100',
@@ -24,8 +13,9 @@ setup(
     license='Apache Software License',
     author='Timo Nachstedt',
     tests_require=['pytest'],
+    setup_requires=['pytest-runner'],
     install_requires=[],
-    cmdclass={'test': PyTest},
+    cmdclass={'test': pytest},
     author_email='mail@nachstedt.com',
     description='Alternative read out for the SQ 100 heart rate monitor',
     long_description="""
