@@ -31,7 +31,6 @@ import logging
 import math
 import os
 import pytz
-import serial
 import time
 
 
@@ -80,10 +79,10 @@ class GH600(object):
         outputHandler.setLevel(level)
         self.logger.addHandler(outputHandler)
         
-        self.serial = serial.Serial()
-        self.serial.port = self.config.get("serial", "comport") 
-        self.serial.baudrate = self.config.getint("serial", "baudrate")
-        self.serial.timeout = self.config.getint("serial", "timeout")
+#         self.serial = serial.Serial()
+#         self.serial.port = self.config.get("serial", "comport") 
+#         self.serial.baudrate = self.config.getint("serial", "baudrate")
+#         self.serial.timeout = self.config.getint("serial", "timeout")
             
         if self.__class__ is GH600:
             if self.config.has_option("general", "firmware"):
