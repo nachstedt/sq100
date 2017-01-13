@@ -1,7 +1,7 @@
 import logging
 import serial
 
-from exc import GH600SerialException
+from sq100.exc import GH600SerialException
 
 
 logger = logging.getLogger(__name__)

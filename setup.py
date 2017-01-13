@@ -12,7 +12,7 @@ setup(
     url='http://github.com/tnachstedt/sq100/',
     license='Apache Software License',
     author='Timo Nachstedt',
-    tests_require=['pytest'],
+    tests_require=['pytest', 'mock'],
     setup_requires=['pytest-runner'],
     install_requires=[],
     author_email='mail@nachstedt.com',

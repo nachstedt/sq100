@@ -2,8 +2,8 @@ from mock import patch, MagicMock
 import serial
 import pytest
 
-from serial_connection import SerialConnection
-from exc import GH600SerialException
+from sq100.serial_connection import SerialConnection
+from sq100.exc import GH600SerialException
 
 
 @patch("serial.Serial")
