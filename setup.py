@@ -13,7 +13,7 @@ setup(
     license='Apache Software License',
     author='Timo Nachstedt',
     tests_require=['pytest', 'mock'],
-    setup_requires=['pytest-runner'],
+    setup_requires=['pytest-runner>=2.9,<3dev'],
     install_requires=[],
     author_email='mail@nachstedt.com',
     description='Alternative read out for the SQ 100 heart rate monitor',
