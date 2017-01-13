@@ -15,7 +15,6 @@ setup(
     tests_require=['pytest'],
     setup_requires=['pytest-runner'],
     install_requires=[],
-    cmdclass={'test': pytest},
     author_email='mail@nachstedt.com',
     description='Alternative read out for the SQ 100 heart rate monitor',
     long_description="""
