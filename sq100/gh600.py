@@ -19,11 +19,10 @@
 # import struct
 # import collections
 
-from export_format import ExportFormat
-from gh600_parse_exception import GH600ParseException
-from gh600_serial_exception import GH600SerialException
-from utilities import Utilities
-from waypoint import Waypoint
+from sq100.export_format import ExportFormat
+from sq100.exc import GH600ParseException, GH600SerialException
+from sq100.utilities import Utilities
+from sq100.waypoint import Waypoint
 
 import configparser
 import glob
