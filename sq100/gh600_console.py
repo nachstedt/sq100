@@ -1,19 +1,21 @@
  #! /usr/bin/env python
 
-import glob, os, sys
-from optparse import OptionParser
-from gh600 import GH600
-from export_format import ExportFormat
-from utilities import Utilities
+import glob
+import os
+import sys
 import tabulate
 
-gh = GH600()
+from optparse import OptionParser
+from sq100.arival_sq100 import ArivalSQ100
+from sq100.export_format import ExportFormat
+from sq100.utilities import Utilities
+
+computer = ArivalSQ100()
 
 def tracklist():
-    gh.connect_serial()
-    tracks = gh.getTracklist()
-    gh.disconnect_serial()
-    #display
+    computer.connect()
+    tracks = computer.getTracklist()
+    computer.disconnect()
     if tracks:
         table = [[track.id, track.date, track.distance, track.duration, 
                   track.calories, track.topspeed, track.trackpointCount, 
