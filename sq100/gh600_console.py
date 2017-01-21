@@ -38,6 +38,28 @@ def tracklist():
         print('no tracks found')
     pass
 
+
+def select_and_export_tracks(select_format=False):
+    config = configparser.SafeConfigParser()
+    config.read('config.ini')
+    picks = input("enter trackID(s) [space delimited] ").strip()
+    trackIds = [int(a) for a in picks.split(' ')]
+    format = "gpx"
+    
+    ef = ExportFormat(format)
+    merge = False
+    if ef.hasMultiple and len(trackIds) > 1:
+        merge = input("Do you want to merge all tracks into a single file? [y/n]: ").strip()
+        merge = True if merge == "y" else False
+    
+    computer = create_computer()
+    computer.connect()
+    tracks = computer.get_tracks(trackIds)
+    computer.disconnect()
+    print(tracks)
+#     gh.exportTracks(tracks, format, merge = merge)
+#     print('exported %i tracks' % len(tracks))
+
 def prompt_format():
     print('available export formats:')
     for format in gh.getExportFormats():
@@ -52,7 +74,7 @@ def choose():
 What do you want to do?\n\
 ------TRACKS-------\n\
 [a]  = get list of all tracks\n\
-[b]  = select and export tracks (to default format) | [b?] to select format or [b <format>]\n\
+[b]  = select and export tracks (to default format) | [b?] to select format\n\
 [c]  = export all tracks (to default format)        | [c?] to select format or [c <format>]\n\
 [d]  = upload tracks\n\
 -----WAYPOINTS-----\n\
@@ -68,53 +90,10 @@ What do you want to do?\n\
     command = input("=>").strip()
     
     if command == "a":
-        print("Getting tracklist")
         tracklist()
     
     elif command.startswith("b"):
-        print("Export track(s)")
-        
-        if command.startswith("b!"):
-            command = command[0] + command[2:]
-        else:
-            tracklist()
-        
-        picks = input("enter trackID(s) [space delimited] ").strip()
-        #adds the slice notation for selecting tracks, i.e. [2:4] or [:-4] or [3]
-        if ":" in picks:
-            lower, upper = picks.split(':')
-            try:
-                lower = int(lower)
-            except ValueError:
-                lower = None
-            try:
-                upper = int(upper)
-            except ValueError:
-                upper = None
-
-            trackIds = gh.getAllTrackIds()[lower:upper]
-        elif "-" in picks:
-            trackIds = [gh.getAllTrackIds()[int(picks)]]
-        else:
-            trackIds = picks.split(' ')
-            
-        if command == "b?":
-            format = prompt_format()
-        elif command.startswith("b "):
-            format = command[2:].strip() 
-        else:
-            format = gh.config.get("export", "default")
-            print("FYI: Exporting to default format '%s' (see config.ini)" % format)
-        
-        ef = ExportFormat(format)
-        merge = False
-        if ef.hasMultiple and len(trackIds) > 1:
-            merge = input("Do you want to merge all tracks into a single file? [y/n]: ").strip()
-            merge = True if merge == "y" else False
-        
-        tracks = gh.getTracks(trackIds)
-        gh.exportTracks(tracks, format, merge = merge)
-        print('exported %i tracks' % len(tracks))
+        select_and_export_tracks()
         
     elif command.startswith("c"):
         print("Export all tracks")
