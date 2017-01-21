@@ -9,16 +9,17 @@ import tabulate
 from optparse import OptionParser
 from sq100.arival_sq100 import ArivalSQ100
 from sq100.export_format import ExportFormat
+from sq100.serial_connection import SerialConnection
 from sq100.utilities import Utilities
 
 def create_computer():
     config = configparser.SafeConfigParser()
     config.read('config.ini')
-    computer = ArivalSQ100(
-        port=config['serial'].get("comport", '/dev/ttyUSB0'),
+    serial = SerialConnection(
+        port=config['serial'].get("comport", '/dev/ttyUSB0'), 
         baudrate=config['serial'].getint("baudrate", 115200),
         timeout=config['serial'].getint("timeout", 2))
-    return computer
+    return ArivalSQ100(serial)
 
 def tracklist():
     computer = create_computer()
