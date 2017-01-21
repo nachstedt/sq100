@@ -1,7 +1,7 @@
 import logging
 import serial
 
-from sq100.exc import GH600SerialException
+from sq100.exceptions import GH600SerialException
 
 
 logger = logging.getLogger(__name__)
@@ -9,9 +9,15 @@ logger = logging.getLogger(__name__)
 class SerialConnection():
     _sleep = 2
 
-    def __init__(self):
+    def __init__(self, baudrate=None, port=None, timeout=None):
         self.serial = serial.Serial()
-
+        if baudrate is not None: 
+            self.baudrate=baudrate
+        if port is not None: 
+            self.port=port
+        if timeout is not None: 
+            self.timeout=timeout
+    
     @property
     def baudrate(self):
         return self.serial.baudrate

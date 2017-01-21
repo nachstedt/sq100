@@ -19,3 +19,6 @@ class GH600ParseException(GH600Exception):
 
 class GH600SerialException(GH600Exception):
     pass
+
+class SQ100MessageException(GH600Exception):
+    pass
