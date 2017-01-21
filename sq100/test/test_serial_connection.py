@@ -3,7 +3,7 @@ import serial
 import pytest
 
 from sq100.serial_connection import SerialConnection
-from sq100.exc import GH600SerialException
+from sq100.exceptions import GH600SerialException
 
 
 @patch("serial.Serial")
