@@ -1,5 +1,6 @@
- #! /usr/bin/env python
+#! /usr/bin/env python
 
+import configparser
 import glob
 import os
 import sys
@@ -10,11 +11,19 @@ from sq100.arival_sq100 import ArivalSQ100
 from sq100.export_format import ExportFormat
 from sq100.utilities import Utilities
 
-computer = ArivalSQ100()
+def create_computer():
+    config = configparser.SafeConfigParser()
+    config.read('config.ini')
+    computer = ArivalSQ100(
+        port=config['serial'].get("comport", '/dev/ttyUSB0'),
+        baudrate=config['serial'].getint("baudrate", 115200),
+        timeout=config['serial'].getint("timeout", 2))
+    return computer
 
 def tracklist():
+    computer = create_computer()
     computer.connect()
-    tracks = computer.getTracklist()
+    tracks = computer.tracklist()
     computer.disconnect()
     if tracks:
         table = [[track.id, track.date, track.distance, track.duration, 

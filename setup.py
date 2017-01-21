@@ -24,7 +24,7 @@ setup(
     include_package_data=True,
     platforms='any',
     test_suite='sq100.test.test_sq100',
-    scripts=['sq100/gh600_console.py'],
+    scripts=['sq100/sq100.gh600_console'],
     classifiers = [
         'Programming Language :: Python',
         'Development Status :: 1 - Planning',
