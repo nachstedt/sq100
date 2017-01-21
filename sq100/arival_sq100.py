@@ -5,7 +5,6 @@ import logging
 import struct
 
 from sq100.exceptions import SQ100MessageException
-from sq100.serial_connection import SerialConnection
 from sq100.track_with_laps import TrackWithLaps
 
 logger = logging.getLogger(__name__)
@@ -13,10 +12,8 @@ logger = logging.getLogger(__name__)
 
 class ArivalSQ100(object):
 
-    def __init__(self, port, baudrate, timeout):
-        self.serial = SerialConnection(port=port, 
-                                       baudrate=baudrate,
-                                       timeout=timeout)
+    def __init__(self, serial):
+        self.serial = serial
 
     @staticmethod
     def _calc_checksum(payload):
