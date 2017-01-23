@@ -28,11 +28,11 @@ def tracklist():
     computer.disconnect()
     if tracks:
         table = [[track.id, track.date, track.distance, track.duration, 
-                  track.calories, track.topspeed, track.trackpointCount, 
-                  track.lapCount]
+                  track.trackpoint_count, track.lap_count, 
+                  track.memory_block_index]
                  for track in tracks]
-        headers = ["id", "date", "distance", "duration", "calories", "topspeed",
-                   "trkpnts", "laps"]
+        headers = ["id", "date", "distance", "duration",
+                   "trkpnts", "laps", "mem. index"]
         print(tabulate.tabulate(table, headers=headers))
     else:
         print('no tracks found')
