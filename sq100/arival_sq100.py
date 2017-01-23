@@ -5,7 +5,7 @@ import logging
 import struct
 
 from sq100.exceptions import SQ100MessageException
-from sq100.track_with_laps import TrackWithLaps
+from sq100.track import Track
 
 logger = logging.getLogger(__name__)
 
@@ -58,20 +58,21 @@ class ArivalSQ100(object):
         logger.info('%i tracks found' % number_tracks)
         TrackHeader = collections.namedtuple('TrackHeader', [
             'year', 'month', 'day', 'hour', 'minute', 'second', 'total_points', 
-            'total_time', 'distance', 'lap_count', 'unused_1', 'id', 
-            'unused_2'])
+            'total_time', 'distance', 'lap_count', 'unused_1', 
+            'memory_block_index', 'unused_2', 'id', 'unused_3'])
         track_headers = map(
             TrackHeader._make, 
-            struct.iter_unpack(">6B3IH7s2B", msg.parameter))
+            struct.iter_unpack(">6B3I5HB", msg.parameter))
         tracks = [
-            TrackWithLaps(
+            Track(
                 date=datetime.datetime(
                     2000+t.year, t.month, t.day, t.hour, t.minute, t.second),
-                lapCount=t.lap_count,
+                lap_count=t.lap_count,
                 duration=datetime.timedelta(seconds=t.total_time/10),
                 distance=t.distance,
-                trackpointCount=t.total_points,
-                id=t.id)
+                trackpoint_count=t.total_points,
+                memory_block_index=t.memory_block_index,
+                track_id=t.id)
             for t in track_headers]
         return tracks
     
