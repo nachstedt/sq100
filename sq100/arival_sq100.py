@@ -33,7 +33,7 @@ class ArivalSQ100(object):
     @staticmethod
     def _unpack_message(message):
         Message = collections.namedtuple("Message", [
-            'device_command', 'payload_length', 'parameter', 'checksum'])
+            'command', 'payload_length', 'parameter', 'checksum'])
         msg = Message._make(struct.unpack(">BH%dsB" % (len(message)-4), message))
         if msg.payload_length != len(msg.parameter):
             raise SQ100MessageException("paylod has wrong length")
@@ -41,11 +41,82 @@ class ArivalSQ100(object):
             raise SQ100MessageException("checksum wrong")
         return msg
     
+    @staticmethod
+    def _process_track_info_parameter(parameter):
+        TrackHeader = collections.namedtuple('TrackHeader', [
+            'year', 'month', 'day', 'hour', 'minute', 'second', 
+            'no_points', 'duration', 'distance', 
+            'no_laps', 'NA_1', 'memory_block_index', 'NA_2', 'id', 
+            'msg_type'])
+        header = TrackHeader._make(
+            struct.unpack(">6B3I5HB", parameter[:29]))
+        TrackInfo = collections.namedtuple('TrackInfo', [
+            'calories', 'NA_1', 'max_speed', 'max_heart_rate', 'avg_heart_rate',
+            'asc_height', 'des_height', 'min_height', 'max_height',
+            'NA_2'])
+        info = TrackInfo._make(
+            struct.unpack(">3H2B4H13s", parameter[29:]))
+        track = Track(
+            date=datetime.datetime(
+                2000+header.year, header.month, header.day, 
+                header.hour, header.minute, header.second),
+            trackpoint_count=header.no_points,
+            duration=datetime.timedelta(seconds=header.duration/10),            
+            distance=header.distance,
+            lap_count=header.no_laps,
+            memory_block_index=header.memory_block_index,
+            track_id=header.id,
+            calories=info.calories,
+            max_speed=info.max_speed,
+            max_heart_rate=info.max_heart_rate,
+            avg_heart_rate=info.avg_heart_rate,
+            ascending_height=info.asc_height,
+            descending_height=info.des_height,
+            min_height=info.min_height,
+            max_height=info.max_height)
+        return track
+    
+    @staticmethod
+    def _process_lap_info_parameter(parameter, track):
+        TrackHeader = collections.namedtuple('TrackHeader', [
+            'year', 'month', 'day', 'hour', 'minute', 'second', 
+            'no_points', 'duration', 'distance', 
+            'no_laps', 'NA_1', 'msg_type'])
+        header = TrackHeader._make(
+            struct.unpack(">6B3IH8sB", parameter[:29]))
+        LapInfo = collections.namedtuple('LapInfo', [
+            'accrued_time', 'total_time', 'distance', 'calories',
+            'NA_1', 'max_speed', 'max_hr', 'avg_hr', 'min_height',
+            'max_height', 'NA_2', 'first_index', 'last_index'])
+        laps = map(
+            LapInfo._make, 
+            struct.iter_unpack(">3I3H2B2H13s2H", parameter[29:]))
+        for lap in laps:
+            track.add_lap(lap)
+
+    @staticmethod
+    def _process_trackpoint_parameter(parameter, track):
+        TrackHeader = collections.namedtuple('TrackHeader', [
+            'year', 'month', 'day', 'hour', 'minute', 'second', 
+            'no_points', 'duration', 'distance', 
+            'no_laps', 'first_session_index', 'last_session_index',
+            'msg_type'])
+        header = TrackHeader._make(
+            struct.unpack(">6B3IH2IB", parameter[:29]))
+        TrackPointData = collections.namedtuple('TrackPointData', [
+            'latitude', 'longitude', 'altitude', 'NA_1', 'speed', 
+            'heart_rate', 'NA_2', 'interval_time', 'NA_3'])
+        trackpoints = map(
+            TrackPointData._make,
+            struct.iter_unpack('>2i3HBHH6s', parameter[29:]))
+        for tp in trackpoints:
+            track.add_trackpoint(tp)
+
     def _query(self, command, parameter=b''):
         return self._unpack_message(
             self.serial.query(
                 self._create_message(command, parameter)))
-    
+
     def connect(self):
         self.serial.connect()
     
@@ -57,9 +128,10 @@ class ArivalSQ100(object):
         number_tracks = msg.payload_length//29 
         logger.info('%i tracks found' % number_tracks)
         TrackHeader = collections.namedtuple('TrackHeader', [
-            'year', 'month', 'day', 'hour', 'minute', 'second', 'total_points', 
-            'total_time', 'distance', 'lap_count', 'unused_1', 
-            'memory_block_index', 'unused_2', 'id', 'unused_3'])
+            'year', 'month', 'day', 'hour', 'minute', 'second', 
+            'no_points', 'duration', 'distance', 
+            'lap_count', 'unused_1', 'memory_block_index', 'unused_2', 'id', 
+            'unused_3'])
         track_headers = map(
             TrackHeader._make, 
             struct.iter_unpack(">6B3I5HB", msg.parameter))
@@ -68,30 +140,32 @@ class ArivalSQ100(object):
                 date=datetime.datetime(
                     2000+t.year, t.month, t.day, t.hour, t.minute, t.second),
                 lap_count=t.lap_count,
-                duration=datetime.timedelta(seconds=t.total_time/10),
+                duration=datetime.timedelta(seconds=t.duration/10),
                 distance=t.distance,
-                trackpoint_count=t.total_points,
+                trackpoint_count=t.no_points,
                 memory_block_index=t.memory_block_index,
                 track_id=t.id)
             for t in track_headers]
         return tracks
     
-    def get_tracks(self, track_ids):
-#         trackIds = [Utilities.dec2hex(str(id), 4) for id in trackIds]
-#         payload = Utilities.dec2hex((len(trackIds) * 512) + 896, 4)
-#         numberOfTracks = Utilities.dec2hex(len(trackIds), 4) 
-#         checksum = Utilities.checkersum("%s%s%s" % (payload, numberOfTracks, ''.join(trackIds)))
-#         self._writeSerial('getTracks', **{'payload':payload, 'numberOfTracks':numberOfTracks, 'trackIds':''.join(trackIds), 'checksum':checksum})
-        
-        no_tracks = len(track_ids)
-        msg = self._query(0x80, struct.pack(">H%dH" % no_tracks, no_tracks, *track_ids))
-        print(msg)
-        msg = self._query(0x81)
-        print(msg)
-        msg = self._query(0x81)
-        print(msg)
-        msg = self._query(0x81)
-        print(msg)
+    def get_tracks(self, memory_indices):        
+        no_tracks = len(memory_indices)
+        params = struct.pack(">H%dH" % no_tracks, no_tracks, *memory_indices)
+        msg = self._query(0x80, params)
+        track = None
+        tracks = []
+        while msg.command != 0x8a:
+            msg_type = msg.parameter[28]
+            if msg_type == 0:
+                track = self._process_track_info_parameter(msg.parameter)
+            elif msg_type == 0xAA:
+                self._process_lap_info_parameter(msg.parameter, track)
+            elif msg_type == 0x55:
+                self._process_trackpoint_parameter(msg.parameter, track)
+                if track.complete():
+                    tracks.append(track)
+                    track = None
+            msg = self._query(0x81)
         return
         
                     
