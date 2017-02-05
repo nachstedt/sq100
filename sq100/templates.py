@@ -133,18 +133,19 @@ import builtins
 # from compiler.consts import SC_LOCAL, SC_GLOBAL, SC_FREE, SC_CELL
 # from compiler.pycodegen import ModuleCodeGenerator
 from tokenize import PseudoToken
-#from werkzeug import utils
-#from werkzeug._internal import _decode_unicode
+# from werkzeug import utils
+# from werkzeug._internal import _decode_unicode
 
 from codecs import decode
 _decode_unicode = decode
 
-# Anything older than Python 2.4 
+# Anything older than Python 2.4
 if sys.version_info < (2, 4):
     class AstMangler(object):
 
         def __getattr__(self, key):
             class_ = getattr(_ast, key)
+
             def wrapper(*args, **kw):
                 lineno = kw.pop('lineno', None)
                 obj = class_(*args, **kw)
@@ -173,7 +174,7 @@ namestart_chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_'
 undefined = type('UndefinedType', (object,), {
     '__iter__': lambda x: iter(()),
     '__repr__': lambda x: 'Undefined',
-    '__str__':  lambda x: ''
+    '__str__': lambda x: ''
 })()
 runtime_vars = dict.fromkeys(('Undefined', '__to_unicode', '__context',
                               '__write', '__write_many'))
@@ -186,7 +187,9 @@ def call_stmt(func, args, lineno):
 
 def tokenize(source, filename):
     escape = escape_re.sub
-    escape_repl = lambda m: m.group(1) or ''
+
+    def escape_repl(m):
+        return m.group(1) or ''
     lineno = 1
     pos = 0
 
@@ -391,7 +394,7 @@ class Parser(object):
         write_data(text[pos:])
 
         return ast.Discard(call_stmt(len(nodes) == 1 and '__write' or
-                           '__write_many', nodes, start_lineno),
+                                     '__write_many', nodes, start_lineno),
                            lineno=start_lineno)
 
 
@@ -443,10 +446,10 @@ class Context(object):
 
 
 # class TemplateCodeGenerator(ModuleCodeGenerator):
-# 
+#
 #     def __init__(self, node, filename):
 #         ModuleCodeGenerator.__init__(self, transform(node, filename))
-# 
+#
 #     def _nameOp(self, prefix, name):
 #         if name in runtime_vars:
 #             return self.emit(prefix + '_GLOBAL', name)
@@ -458,10 +461,10 @@ class Template(object):
     templates from files on the file system to get better debug output.
     """
     default_context = {
-        #'escape':           utils.escape,
-        #'url_quote':        utils.url_quote,
-        #'url_quote_plus':   utils.url_quote_plus,
-        #'url_encode':       utils.url_encode
+        # 'escape':           utils.escape,
+        # 'url_quote':        utils.url_quote,
+        # 'url_quote_plus':   utils.url_quote_plus,
+        # 'url_encode':       utils.url_encode
     }
 
     def __init__(self, source, filename='<template>', encoding='utf-8',
@@ -502,7 +505,7 @@ class Template(object):
         ns = self.default_context.copy()
         ns.update(dict(*args, **kwargs))
         context = Context(ns, self.encoding, self.errors)
-                
+
         if sys.version_info < (2, 4):
             exec(self.code, context.runtime, ns)
         else:
