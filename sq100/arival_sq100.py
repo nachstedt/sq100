@@ -64,7 +64,8 @@ class ArivalSQ100(object):
                 2000 + header.year, header.month, header.day,
                 header.hour, header.minute, header.second),
             no_track_points=header.no_points,
-            duration=datetime.timedelta(seconds=header.duration / 10),
+            duration=datetime.timedelta(
+                seconds=round(header.duration / 10, 1)),
             distance=header.distance,
             no_laps=header.no_laps,
             memory_block_index=header.memory_block_index,
@@ -91,7 +92,7 @@ class ArivalSQ100(object):
             date=datetime.datetime(
                 2000 + t.year, t.month, t.day, t.hour, t.minute, t.second),
             no_track_points=t.no_points,
-            duration=datetime.timedelta(seconds=t.duration / 10),
+            duration=datetime.timedelta(seconds=round(t.duration / 10, 1)),
             distance=t.distance,
             no_laps=t.no_laps)
         LapInfo = collections.namedtuple('LapInfo', [
@@ -102,8 +103,9 @@ class ArivalSQ100(object):
             LapInfo._make,
             struct.iter_unpack(">3I3H2B2H13s2H", parameter[29:]))
         laps = [
-            Lap(duration=datetime.timedelta(seconds=l.duration / 10),
-                total_time=datetime.timedelta(seconds=l.total_time / 10),
+            Lap(duration=datetime.timedelta(seconds=round(l.duration / 10, 1)),
+                total_time=datetime.timedelta(
+                    seconds=round(l.total_time / 10, 1)),
                 distance=l.distance,
                 calories=l.calories,
                 max_speed=l.max_speed,
@@ -129,7 +131,7 @@ class ArivalSQ100(object):
             date=datetime.datetime(
                 2000 + t.year, t.month, t.day, t.hour, t.minute, t.second),
             no_track_points=t.no_points,
-            duration=datetime.timedelta(seconds=t.duration / 10),
+            duration=datetime.timedelta(seconds=round(t.duration / 10, 1)),
             distance=t.distance,
             no_laps=t.no_laps)
         session_indices = (t.first_session_index, t.last_session_index)
@@ -140,12 +142,14 @@ class ArivalSQ100(object):
             TrackPointData._make,
             struct.iter_unpack('>2i3HBHH6s', parameter[29:]))
         trackpoints = [
-            Trackpoint(latitude=round(t.latitude * 1e-6, 6),
-                       longitude=round(t.longitude * 1e-6, 6),
-                       altitude=t.altitude,
-                       speed=round(t.speed * 1e-2, 2),
-                       heart_rate=t.heart_rate,
-                       interval=round(t.interval_time * 1e-1, 1))
+            Trackpoint(
+                latitude=round(t.latitude * 1e-6, 6),
+                longitude=round(t.longitude * 1e-6, 6),
+                altitude=t.altitude,
+                speed=round(t.speed * 1e-2, 2),
+                heart_rate=t.heart_rate,
+                interval=datetime.timedelta(
+                    seconds=round(t.interval_time * 1e-1, 1)))
             for t in trackpoint_data]
         return track, session_indices, trackpoints
 
