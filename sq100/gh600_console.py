@@ -26,7 +26,7 @@ def create_computer():
 def tracklist():
     computer = create_computer()
     computer.connect()
-    tracks = computer.tracklist()
+    tracks = computer.get_track_list()
     computer.disconnect()
     if tracks:
         table = [[track.id, track.date, track.distance, track.duration,
