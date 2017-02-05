@@ -63,10 +63,10 @@ class ArivalSQ100(object):
             date=datetime.datetime(
                 2000 + header.year, header.month, header.day,
                 header.hour, header.minute, header.second),
-            trackpoint_count=header.no_points,
+            no_track_points=header.no_points,
             duration=datetime.timedelta(seconds=header.duration / 10),
             distance=header.distance,
-            lap_count=header.no_laps,
+            no_laps=header.no_laps,
             memory_block_index=header.memory_block_index,
             track_id=header.id,
             calories=info.calories,
