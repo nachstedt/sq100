@@ -34,3 +34,23 @@ class Track(object):
         self.no_laps = no_laps
         self.no_track_points = no_track_points
         self.trackpoints = []
+
+    def compatible_to(self, other):
+        def c(a, b):
+            return a is None or b is None or a == b
+        return (
+            c(self.ascending_height, other.ascending_height) and
+            c(self.avg_heart_rate, other.avg_heart_rate) and
+            c(self.calories, other.calories) and
+            c(self.date, other.date) and
+            c(self.descending_height, other.descending_height) and
+            c(self.distance, other.distance) and
+            c(self.duration, other.duration) and
+            c(self.id, other.id) and
+            c(self.max_heart_rate, other.max_heart_rate) and
+            c(self.max_height, other.max_height) and
+            c(self.max_speed, other.max_speed) and
+            c(self.memory_block_index, other.memory_block_index) and
+            c(self.min_height, other.min_height) and
+            c(self.no_laps, other.no_laps) and
+            c(self.no_track_points, other.no_track_points))
