@@ -168,3 +168,82 @@ def test_unpack_lap_info_parameter():
     assert(laps[1].max_height == lap_2_max_height)
     assert(laps[1].first_index == lap_2_first_index)
     assert(laps[1].last_index == lap_2_last_index)
+
+
+def test_unpack_trackpoint_parameter():
+    track_date = datetime.datetime(2016, 7, 23, 14, 30, 11)
+    track_no_track_points = 1230
+    track_duration = datetime.timedelta(seconds=2345)
+    track_distance = 4321  # meter
+    track_no_laps = 2
+    session_start = 120
+    session_last = 121
+
+    tp_0_latitude = 51.532719  # degree
+    tp_0_longitude = 9.935127  # degree
+    tp_0_altitude = 156  # meter
+    tp_0_speed = 10.2  # km/h
+    tp_0_heart_rate = 142
+    tp_0_interval = 1.3
+
+    tp_1_latitude = -22.906846  # degree
+    tp_1_longitude = -43.172896  # degree
+    tp_1_altitude = 32  # meter
+    tp_1_speed = 14.9  # km/h
+    tp_1_heart_rate = 168
+    tp_1_interval = 5.1
+
+    parameter = (
+        struct.pack(
+            ">6B3IH2IB",
+            track_date.year - 2000, track_date.month, track_date.day,
+            track_date.hour, track_date.minute, track_date.second,
+            track_no_track_points, track_duration.seconds * 10, track_distance,
+            track_no_laps, session_start, session_last, 0x55) +
+        struct.pack(
+            ">2i3HB2H6s",
+            int(round(tp_0_latitude * 1e6)),
+            int(round(tp_0_longitude * 1e6)),
+            tp_0_altitude,
+            0,
+            int(round(tp_0_speed * 100)),
+            tp_0_heart_rate,
+            0,
+            int(round(tp_0_interval * 10)),
+            b'') +
+        struct.pack(
+            ">2i3HB2H6s",
+            int(round(tp_1_latitude * 1e6)),
+            int(round(tp_1_longitude * 1e6)),
+            tp_1_altitude, 0,
+            int(round(tp_1_speed * 100)),
+            tp_1_heart_rate,
+            0,
+            int(round(tp_1_interval * 10)),
+            b''))
+
+    track, session, track_points = ArivalSQ100._unpack_trackpoint_parameter(
+        parameter)
+
+    assert(track.date == track_date)
+    assert(track.no_track_points == track_no_track_points)
+    assert(track.duration == track_duration)
+    assert(track.distance == track_distance)
+    assert(track.no_laps == track_no_laps)
+
+    assert(session[0] == session_start)
+    assert(session[1] == session_last)
+
+    assert(track_points[0].latitude == tp_0_latitude)
+    assert(track_points[0].longitude == tp_0_longitude)
+    assert(track_points[0].altitude == tp_0_altitude)
+    assert(track_points[0].speed == tp_0_speed)
+    assert(track_points[0].heart_rate == tp_0_heart_rate)
+    assert(track_points[0].interval == tp_0_interval)
+
+    assert(track_points[1].latitude == tp_1_latitude)
+    assert(track_points[1].longitude == tp_1_longitude)
+    assert(track_points[1].altitude == tp_1_altitude)
+    assert(track_points[1].speed == tp_1_speed)
+    assert(track_points[1].heart_rate == tp_1_heart_rate)
+    assert(track_points[1].interval == tp_1_interval)

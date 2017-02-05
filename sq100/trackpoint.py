@@ -11,7 +11,7 @@ class Trackpoint(Point):
                  heart_rate=None,
                  interval=None,
                  date=None):
-        Point.__init__(latitude=latitude, longitude=longitude)
+        Point.__init__(self, latitude=latitude, longitude=longitude)
         self.altitude = altitude
         self.speed = speed
         self.heart_rate = heart_rate
