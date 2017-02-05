@@ -16,3 +16,16 @@ def test_calc_checksum():
 
 def test_create_message():
     assert(ArivalSQ100._create_message(0x78) == b'\x02\x00\x01\x78\x79')
+
+def test_unpack_message():
+    command = 123
+    parameter=b"Hello world"
+    payload_length=len(parameter)
+    checksum = ArivalSQ100._calc_checksum(parameter)
+    message =struct.pack(">BH%dsB" % len(parameter), command, payload_length,
+                         parameter, checksum)
+    data = ArivalSQ100._unpack_message(message)
+    assert(data.command == command)
+    assert(data.parameter == parameter)
+    assert(data.payload_length == payload_length)
+    assert(data.checksum == checksum)
