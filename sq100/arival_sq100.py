@@ -32,6 +32,49 @@ class ArivalSQ100(object):
         return struct.pack(">BH%dsB" % len(payload),
                            start_sequence, payload_length, payload, checksum)
 
+    def _query(self, command, parameter=b''):
+        return self._unpack_message(
+            self.serial.query(
+                self._create_message(command, parameter)))
+
+    @staticmethod
+    def _unpack_lap_info_parameter(parameter):
+        TrackHeader = collections.namedtuple('TrackHeader', [
+            'year', 'month', 'day', 'hour', 'minute', 'second',
+            'no_points', 'duration', 'distance',
+            'no_laps', 'NA_1', 'msg_type'])
+        t = TrackHeader._make(
+            struct.unpack(">6B3IH8sB", parameter[:29]))
+        track = Track(
+            date=datetime.datetime(
+                2000 + t.year, t.month, t.day, t.hour, t.minute, t.second),
+            no_track_points=t.no_points,
+            duration=datetime.timedelta(seconds=round(t.duration / 10, 1)),
+            distance=t.distance,
+            no_laps=t.no_laps)
+        LapInfo = collections.namedtuple('LapInfo', [
+            'duration', 'total_time', 'distance', 'calories',
+            'NA_1', 'max_speed', 'max_heart_rate', 'avg_heart_rate',
+            'min_height', 'max_height', 'NA_2', 'first_index', 'last_index'])
+        lap_infos = map(
+            LapInfo._make,
+            struct.iter_unpack(">3I3H2B2H13s2H", parameter[29:]))
+        laps = [
+            Lap(duration=datetime.timedelta(seconds=round(l.duration / 10, 1)),
+                total_time=datetime.timedelta(
+                    seconds=round(l.total_time / 10, 1)),
+                distance=l.distance,
+                calories=l.calories,
+                max_speed=l.max_speed,
+                max_heart_rate=l.max_heart_rate,
+                avg_heart_rate=l.avg_heart_rate,
+                min_height=l.min_height,
+                max_height=l.max_height,
+                first_index=l.first_index,
+                last_index=l.last_index)
+            for l in lap_infos]
+        return track, laps
+
     @staticmethod
     def _unpack_message(message):
         Message = collections.namedtuple("Message", [
@@ -81,45 +124,7 @@ class ArivalSQ100(object):
         return track
 
     @staticmethod
-    def _unpack_lap_info_parameter(parameter):
-        TrackHeader = collections.namedtuple('TrackHeader', [
-            'year', 'month', 'day', 'hour', 'minute', 'second',
-            'no_points', 'duration', 'distance',
-            'no_laps', 'NA_1', 'msg_type'])
-        t = TrackHeader._make(
-            struct.unpack(">6B3IH8sB", parameter[:29]))
-        track = Track(
-            date=datetime.datetime(
-                2000 + t.year, t.month, t.day, t.hour, t.minute, t.second),
-            no_track_points=t.no_points,
-            duration=datetime.timedelta(seconds=round(t.duration / 10, 1)),
-            distance=t.distance,
-            no_laps=t.no_laps)
-        LapInfo = collections.namedtuple('LapInfo', [
-            'duration', 'total_time', 'distance', 'calories',
-            'NA_1', 'max_speed', 'max_heart_rate', 'avg_heart_rate',
-            'min_height', 'max_height', 'NA_2', 'first_index', 'last_index'])
-        lap_infos = map(
-            LapInfo._make,
-            struct.iter_unpack(">3I3H2B2H13s2H", parameter[29:]))
-        laps = [
-            Lap(duration=datetime.timedelta(seconds=round(l.duration / 10, 1)),
-                total_time=datetime.timedelta(
-                    seconds=round(l.total_time / 10, 1)),
-                distance=l.distance,
-                calories=l.calories,
-                max_speed=l.max_speed,
-                max_heart_rate=l.max_heart_rate,
-                avg_heart_rate=l.avg_heart_rate,
-                min_height=l.min_height,
-                max_height=l.max_height,
-                first_index=l.first_index,
-                last_index=l.last_index)
-            for l in lap_infos]
-        return track, laps
-
-    @staticmethod
-    def _unpack_trackpoint_parameter(parameter):
+    def _unpack_track_point_parameter(parameter):
         TrackHeader = collections.namedtuple('TrackHeader', [
             'year', 'month', 'day', 'hour', 'minute', 'second',
             'no_points', 'duration', 'distance',
@@ -153,18 +158,13 @@ class ArivalSQ100(object):
             for t in trackpoint_data]
         return track, session_indices, trackpoints
 
-    def _query(self, command, parameter=b''):
-        return self._unpack_message(
-            self.serial.query(
-                self._create_message(command, parameter)))
-
     def connect(self):
         self.serial.connect()
 
     def disconnect(self):
         self.serial.disconnect()
 
-    def tracklist(self):
+    def get_track_list(self):
         msg = self._query(0x78)
         number_tracks = msg.payload_length // 29
         logger.info('%i tracks found' % number_tracks)
@@ -208,7 +208,7 @@ class ArivalSQ100(object):
                 track.laps = laps
             elif msg_type == 0x55:
                 trackhead, session_indices, trackpoints = (
-                    self._unpack_trackpoint_parameter(msg.parameter))
+                    self._unpack_track_point_parameter(msg.parameter))
                 assert trackhead.compatible_to(track)
                 assert session_indices[0] == track.no_trackpoints()
                 assert session_indices[

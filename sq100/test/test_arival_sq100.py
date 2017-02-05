@@ -4,6 +4,10 @@ import struct
 
 from sq100.arival_sq100 import ArivalSQ100
 
+"""
+private methods
+"""
+
 
 def test_calc_checksum():
     payload = b"\x45\x73\xAF\x20"
@@ -18,69 +22,6 @@ def test_calc_checksum():
 
 def test_create_message():
     assert(ArivalSQ100._create_message(0x78) == b'\x02\x00\x01\x78\x79')
-
-
-def test_unpack_message():
-    command = 123
-    parameter = b"Hello world"
-    payload_length = len(parameter)
-    checksum = ArivalSQ100._calc_checksum(parameter)
-    message = struct.pack(">BH%dsB" % len(parameter), command, payload_length,
-                          parameter, checksum)
-    data = ArivalSQ100._unpack_message(message)
-    assert(data.command == command)
-    assert(data.parameter == parameter)
-    assert(data.payload_length == payload_length)
-    assert(data.checksum == checksum)
-
-
-def test_unpack_track_info_parameter():
-    date = datetime.datetime(2016, 7, 23, 14, 30, 11)
-    no_track_points = 1230
-    duration = datetime.timedelta(seconds=2345.9)
-    distance = 4321
-    no_laps = 3
-    memory_block_index = 51
-    track_id = 13
-    calories = 714
-    max_speed = 89
-    max_heart_rate = 198
-    avg_heart_rate = 153
-    asc_height = 873
-    des_height = 543
-    min_height = 345
-    max_height = 1122
-
-    parameter = struct.pack(
-        ">6B3I5HB3H2B4H13s",
-        date.year - 2000, date.month, date.day,
-        date.hour, date.minute, date.second,
-        no_track_points,
-        round(duration.total_seconds() * 10),
-        distance,
-        no_laps, 0, memory_block_index, 0, track_id,
-        0,
-        calories, 0, max_speed,
-        max_heart_rate, avg_heart_rate,
-        asc_height, des_height, min_height, max_height,
-        b'')
-
-    track = ArivalSQ100._unpack_track_info_parameter(parameter)
-    assert(track.date == date)
-    assert(track.no_track_points == no_track_points)
-    assert(track.duration == duration)
-    assert(track.distance == distance)
-    assert(track.no_laps == no_laps)
-    assert(track.memory_block_index == memory_block_index)
-    assert(track.id == track_id)
-    assert(track.calories == calories)
-    assert(track.max_speed == max_speed)
-    assert(track.max_heart_rate == max_heart_rate)
-    assert(track.avg_heart_rate == avg_heart_rate)
-    assert(track.ascending_height == asc_height)
-    assert(track.descending_height == des_height)
-    assert(track.min_height == min_height)
-    assert(track.max_height == max_height)
 
 
 def test_unpack_lap_info_parameter():
@@ -175,7 +116,70 @@ def test_unpack_lap_info_parameter():
     assert(laps[1].last_index == lap_2_last_index)
 
 
-def test_unpack_trackpoint_parameter():
+def test_unpack_message():
+    command = 123
+    parameter = b"Hello world"
+    payload_length = len(parameter)
+    checksum = ArivalSQ100._calc_checksum(parameter)
+    message = struct.pack(">BH%dsB" % len(parameter), command, payload_length,
+                          parameter, checksum)
+    data = ArivalSQ100._unpack_message(message)
+    assert(data.command == command)
+    assert(data.parameter == parameter)
+    assert(data.payload_length == payload_length)
+    assert(data.checksum == checksum)
+
+
+def test_unpack_track_info_parameter():
+    date = datetime.datetime(2016, 7, 23, 14, 30, 11)
+    no_track_points = 1230
+    duration = datetime.timedelta(seconds=2345.9)
+    distance = 4321
+    no_laps = 3
+    memory_block_index = 51
+    track_id = 13
+    calories = 714
+    max_speed = 89
+    max_heart_rate = 198
+    avg_heart_rate = 153
+    asc_height = 873
+    des_height = 543
+    min_height = 345
+    max_height = 1122
+
+    parameter = struct.pack(
+        ">6B3I5HB3H2B4H13s",
+        date.year - 2000, date.month, date.day,
+        date.hour, date.minute, date.second,
+        no_track_points,
+        round(duration.total_seconds() * 10),
+        distance,
+        no_laps, 0, memory_block_index, 0, track_id,
+        0,
+        calories, 0, max_speed,
+        max_heart_rate, avg_heart_rate,
+        asc_height, des_height, min_height, max_height,
+        b'')
+
+    track = ArivalSQ100._unpack_track_info_parameter(parameter)
+    assert(track.date == date)
+    assert(track.no_track_points == no_track_points)
+    assert(track.duration == duration)
+    assert(track.distance == distance)
+    assert(track.no_laps == no_laps)
+    assert(track.memory_block_index == memory_block_index)
+    assert(track.id == track_id)
+    assert(track.calories == calories)
+    assert(track.max_speed == max_speed)
+    assert(track.max_heart_rate == max_heart_rate)
+    assert(track.avg_heart_rate == avg_heart_rate)
+    assert(track.ascending_height == asc_height)
+    assert(track.descending_height == des_height)
+    assert(track.min_height == min_height)
+    assert(track.max_height == max_height)
+
+
+def test_unpack_track_point_parameter():
     track_date = datetime.datetime(2016, 7, 23, 14, 30, 11)
     track_no_track_points = 1230
     track_duration = datetime.timedelta(seconds=2345.2)
@@ -229,7 +233,7 @@ def test_unpack_trackpoint_parameter():
             int(round(tp_1_interval.total_seconds() * 10)),
             b''))
 
-    track, session, track_points = ArivalSQ100._unpack_trackpoint_parameter(
+    track, session, track_points = ArivalSQ100._unpack_track_point_parameter(
         parameter)
 
     assert(track.date == track_date)
