@@ -193,66 +193,26 @@ class ArivalSQ100(object):
         while msg.command != 0x8a:
             msg_type = msg.parameter[28]
             if msg_type == 0:
+                logger.debug("initializing new track")
                 track = self._unpack_track_info_parameter(msg.parameter)
             elif msg_type == 0xAA:
+                logger.debug("setting laps of track")
                 trackhead, laps = self._unpack_lap_info_parameter(msg.parameter)
                 assert trackhead.compatible_to(track)
-                track.add_laps(laps)
+                track.laps = laps
             elif msg_type == 0x55:
-                trackhead, trackpoints = self._unpack_trackpoint_parameter(
-                    msg.parameter)
+                trackhead, session_indices, trackpoints = (
+                    self._unpack_trackpoint_parameter(msg.parameter))
                 assert trackhead.compatible_to(track)
+                assert session_indices[0] == track.no_trackpoints()
+                assert session_indices[1]-session_indices[0]+1==len(trackpoints)
+                logger.debug('adding trackpoints %i-%i', *session_indices)
                 track.add_trackpoints(trackpoints)
                 if track.complete():
+                    logger.debug("track complete")
                     tracks.append(track)
                     track = None
             msg = self._query(0x81)
-        return
-        
-                    
-        tracks = []
-        last = -1
-        initializeNewTrack = True
-        
-        while True:
-            data = self._readSerial(2075)
-            time.sleep(2)
             
-            if data != '8A000000':
-                #shoud new track be initialized?
-                if initializeNewTrack:
-                    self.logger.debug('initalizing new track')
-                    track = TrackWithLaps().fromHex(data[6:64], self.timezone)
-                    initializeNewTrack = False
-                
-                if data[60:64] == "FFFF":
-                    self.logger.debug('adding laps')
-                    track.addLapsFromHex(data[68:-2])
-                    self._writeSerial('requestNextTrackSegment')
-                
-                elif Utilities.hex2dec(data[60:64]) == last + 1:
-                    self.logger.debug('adding trackpoints %i-%i of %i' % (Utilities.hex2dec(data[60:64]), Utilities.hex2dec(data[64:68]), track.trackpointCount))
-                    track.addTrackpointsFromHex(data[68:-2])
-                    last = Utilities.hex2dec(data[64:68])
-                    #check if last segment of track     
-                    if last + 1 == track.trackpointCount:
-                        tracks.append(track)
-                        last = -1
-                        initializeNewTrack = True
-                    self._writeSerial('requestNextTrackSegment')
-                
-                else:
-                    #re-request last segment again
-                    self.logger.debug('last segment Errornous, re-requesting')
-                    self.serial.flushInput()
-                    self._writeSerial('requestErrornousTrackSegment')
-            else:
-                #we are done, do maintenance work here
-                for track in tracks:
-                    for lap in track.laps:
-                        lap.calculateCoordinates(track.trackpoints)
-                break        
-
-        self.logger.info('number of tracks %d' % len(tracks))
+        logger.info("number of tracks: %d", len(tracks))
         return tracks
-        
