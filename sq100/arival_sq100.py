@@ -117,7 +117,7 @@ class ArivalSQ100(object):
         return track, laps
 
     @staticmethod
-    def _unpack_trackpoint_parameter(parameter, track):
+    def _unpack_trackpoint_parameter(parameter):
         TrackHeader = collections.namedtuple('TrackHeader', [
             'year', 'month', 'day', 'hour', 'minute', 'second',
             'no_points', 'duration', 'distance',
@@ -128,10 +128,10 @@ class ArivalSQ100(object):
         track = Track(
             date=datetime.datetime(
                 2000 + t.year, t.month, t.day, t.hour, t.minute, t.second),
-            trackpoint_count=t.no_points,
+            no_track_points=t.no_points,
             duration=datetime.timedelta(seconds=t.duration / 10),
             distance=t.distance,
-            lap_count=t.no_laps)
+            no_laps=t.no_laps)
         session_indices = (t.first_session_index, t.last_session_index)
         TrackPointData = collections.namedtuple('TrackPointData', [
             'latitude', 'longitude', 'altitude', 'NA_1', 'speed',
@@ -140,12 +140,12 @@ class ArivalSQ100(object):
             TrackPointData._make,
             struct.iter_unpack('>2i3HBHH6s', parameter[29:]))
         trackpoints = [
-            Trackpoint(latitude=t.latitude * 1e-6,
-                       longitude=t.longitude * 1e-6,
+            Trackpoint(latitude=round(t.latitude * 1e-6, 6),
+                       longitude=round(t.longitude * 1e-6, 6),
                        altitude=t.altitude,
-                       speed=t.speed * 1e-2,
+                       speed=round(t.speed * 1e-2, 2),
                        heart_rate=t.heart_rate,
-                       interval=t.interval_time)
+                       interval=round(t.interval_time * 1e-1, 1))
             for t in trackpoint_data]
         return track, session_indices, trackpoints
 
