@@ -124,6 +124,29 @@ class ArivalSQ100(object):
         return track
 
     @staticmethod
+    def _unpack_track_list_parameter(parameter):
+        TrackHeader = collections.namedtuple('TrackHeader', [
+            'year', 'month', 'day', 'hour', 'minute', 'second',
+            'no_points', 'duration', 'distance',
+            'lap_count', 'unused_1', 'memory_block_index', 'unused_2', 'id',
+            'unused_3'])
+        track_headers = map(
+            TrackHeader._make,
+            struct.iter_unpack(">6B3I5HB", parameter))
+        tracks = [
+            Track(
+                date=datetime.datetime(
+                    2000 + t.year, t.month, t.day, t.hour, t.minute, t.second),
+                no_laps=t.lap_count,
+                duration=datetime.timedelta(seconds=round(t.duration / 10, 1)),
+                distance=t.distance,
+                no_track_points=t.no_points,
+                memory_block_index=t.memory_block_index,
+                track_id=t.id)
+            for t in track_headers]
+        return tracks
+
+    @staticmethod
     def _unpack_track_point_parameter(parameter):
         TrackHeader = collections.namedtuple('TrackHeader', [
             'year', 'month', 'day', 'hour', 'minute', 'second',
@@ -168,25 +191,7 @@ class ArivalSQ100(object):
         msg = self._query(0x78)
         number_tracks = msg.payload_length // 29
         logger.info('%i tracks found' % number_tracks)
-        TrackHeader = collections.namedtuple('TrackHeader', [
-            'year', 'month', 'day', 'hour', 'minute', 'second',
-            'no_points', 'duration', 'distance',
-            'lap_count', 'unused_1', 'memory_block_index', 'unused_2', 'id',
-            'unused_3'])
-        track_headers = map(
-            TrackHeader._make,
-            struct.iter_unpack(">6B3I5HB", msg.parameter))
-        tracks = [
-            Track(
-                date=datetime.datetime(
-                    2000 + t.year, t.month, t.day, t.hour, t.minute, t.second),
-                lap_count=t.lap_count,
-                duration=datetime.timedelta(seconds=t.duration / 10),
-                distance=t.distance,
-                trackpoint_count=t.no_points,
-                memory_block_index=t.memory_block_index,
-                track_id=t.id)
-            for t in track_headers]
+        tracks = self._unpack_track_list_parameter(msg.parameter)
         return tracks
 
     def get_tracks(self, memory_indices):
