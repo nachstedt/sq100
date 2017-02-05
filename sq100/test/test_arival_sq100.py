@@ -37,7 +37,7 @@ def test_unpack_message():
 def test_unpack_track_info_parameter():
     date = datetime.datetime(2016, 7, 23, 14, 30, 11)
     no_track_points = 1230
-    duration = datetime.timedelta(seconds=2345)
+    duration = datetime.timedelta(seconds=2345.9)
     distance = 4321
     no_laps = 3
     memory_block_index = 51
@@ -55,7 +55,9 @@ def test_unpack_track_info_parameter():
         ">6B3I5HB3H2B4H13s",
         date.year - 2000, date.month, date.day,
         date.hour, date.minute, date.second,
-        no_track_points, duration.seconds * 10, distance,
+        no_track_points,
+        round(duration.total_seconds() * 10),
+        distance,
         no_laps, 0, memory_block_index, 0, track_id,
         0,
         calories, 0, max_speed,
@@ -84,12 +86,12 @@ def test_unpack_track_info_parameter():
 def test_unpack_lap_info_parameter():
     date = datetime.datetime(2016, 7, 23, 14, 30, 11)
     no_track_points = 1230
-    duration = datetime.timedelta(seconds=2345)
-    distance = 4321
+    duration = datetime.timedelta(seconds=2345.5)
+    distance = 4321  # meter
     no_laps = 2
 
-    lap_1_duration = datetime.timedelta(seconds=3456)
-    lap_1_total_time = datetime.timedelta(seconds=3456)
+    lap_1_duration = datetime.timedelta(seconds=3456.7)
+    lap_1_total_time = datetime.timedelta(seconds=3456.7)
     lap_1_distance = 3589
     lap_1_calories = 111
     lap_1_max_speed = 312
@@ -100,8 +102,8 @@ def test_unpack_lap_info_parameter():
     lap_1_first_index = 0
     lap_1_last_index = 612
 
-    lap_2_duration = datetime.timedelta(seconds=1122)
-    lap_2_total_time = datetime.timedelta(seconds=8899)
+    lap_2_duration = datetime.timedelta(seconds=1122.2)
+    lap_2_total_time = datetime.timedelta(seconds=8899.4)
     lap_2_distance = 657
     lap_2_calories = 854
     lap_2_max_speed = 64
@@ -117,18 +119,21 @@ def test_unpack_lap_info_parameter():
             ">6B3IH8sB",
             date.year - 2000, date.month, date.day,
             date.hour, date.minute, date.second,
-            no_track_points, duration.seconds * 10, distance,
+            no_track_points,
+            round(duration.total_seconds() * 10), distance,
             no_laps, b'', 0xAA) +
         struct.pack(
             ">3I3H2B2H13s2H",
-            lap_1_duration.seconds * 10, lap_1_total_time.seconds * 10,
+            round(lap_1_duration.total_seconds() * 10),
+            round(lap_1_total_time.total_seconds() * 10),
             lap_1_distance, lap_1_calories,
             0, lap_1_max_speed, lap_1_max_heart_rate, lap_1_avg_heart_rate,
             lap_1_min_height, lap_1_max_height, b'',
             lap_1_first_index, lap_1_last_index) +
         struct.pack(
             ">3I3H2B2H13s2H",
-            lap_2_duration.seconds * 10, lap_2_total_time.seconds * 10,
+            round(lap_2_duration.total_seconds() * 10),
+            round(lap_2_total_time.total_seconds() * 10),
             lap_2_distance, lap_2_calories, 0,
             lap_2_max_speed, lap_2_max_heart_rate, lap_2_avg_heart_rate,
             lap_2_min_height, lap_2_max_height, b'',
@@ -173,7 +178,7 @@ def test_unpack_lap_info_parameter():
 def test_unpack_trackpoint_parameter():
     track_date = datetime.datetime(2016, 7, 23, 14, 30, 11)
     track_no_track_points = 1230
-    track_duration = datetime.timedelta(seconds=2345)
+    track_duration = datetime.timedelta(seconds=2345.2)
     track_distance = 4321  # meter
     track_no_laps = 2
     session_start = 120
@@ -184,21 +189,23 @@ def test_unpack_trackpoint_parameter():
     tp_0_altitude = 156  # meter
     tp_0_speed = 10.2  # km/h
     tp_0_heart_rate = 142
-    tp_0_interval = 1.3
+    tp_0_interval = datetime.timedelta(seconds=1.3)
 
     tp_1_latitude = -22.906846  # degree
     tp_1_longitude = -43.172896  # degree
     tp_1_altitude = 32  # meter
     tp_1_speed = 14.9  # km/h
     tp_1_heart_rate = 168
-    tp_1_interval = 5.1
+    tp_1_interval = datetime.timedelta(seconds=5.1)
 
     parameter = (
         struct.pack(
             ">6B3IH2IB",
             track_date.year - 2000, track_date.month, track_date.day,
             track_date.hour, track_date.minute, track_date.second,
-            track_no_track_points, track_duration.seconds * 10, track_distance,
+            track_no_track_points,
+            round(track_duration.total_seconds() * 10),
+            track_distance,
             track_no_laps, session_start, session_last, 0x55) +
         struct.pack(
             ">2i3HB2H6s",
@@ -209,7 +216,7 @@ def test_unpack_trackpoint_parameter():
             int(round(tp_0_speed * 100)),
             tp_0_heart_rate,
             0,
-            int(round(tp_0_interval * 10)),
+            int(round(tp_0_interval.total_seconds() * 10)),
             b'') +
         struct.pack(
             ">2i3HB2H6s",
@@ -219,7 +226,7 @@ def test_unpack_trackpoint_parameter():
             int(round(tp_1_speed * 100)),
             tp_1_heart_rate,
             0,
-            int(round(tp_1_interval * 10)),
+            int(round(tp_1_interval.total_seconds() * 10)),
             b''))
 
     track, session, track_points = ArivalSQ100._unpack_trackpoint_parameter(
