@@ -80,7 +80,7 @@ class ArivalSQ100(object):
         return track
 
     @staticmethod
-    def _unpack_lap_info_parameter(parameter, track):
+    def _unpack_lap_info_parameter(parameter):
         TrackHeader = collections.namedtuple('TrackHeader', [
             'year', 'month', 'day', 'hour', 'minute', 'second',
             'no_points', 'duration', 'distance',
@@ -90,20 +90,20 @@ class ArivalSQ100(object):
         track = Track(
             date=datetime.datetime(
                 2000 + t.year, t.month, t.day, t.hour, t.minute, t.second),
-            trackpoint_count=t.no_points,
+            no_track_points=t.no_points,
             duration=datetime.timedelta(seconds=t.duration / 10),
             distance=t.distance,
-            lap_count=t.no_laps)
+            no_laps=t.no_laps)
         LapInfo = collections.namedtuple('LapInfo', [
-            'accrued_time', 'total_time', 'distance', 'calories',
-            'NA_1', 'max_speed', 'max_hr', 'avg_hr', 'min_height',
-            'max_height', 'NA_2', 'first_index', 'last_index'])
+            'duration', 'total_time', 'distance', 'calories',
+            'NA_1', 'max_speed', 'max_heart_rate', 'avg_heart_rate',
+            'min_height', 'max_height', 'NA_2', 'first_index', 'last_index'])
         lap_infos = map(
             LapInfo._make,
             struct.iter_unpack(">3I3H2B2H13s2H", parameter[29:]))
         laps = [
-            Lap(accrued_time=datetime.timedelta(l.accrued_time / 10),
-                total_time=datetime.timedelta(l.total_time / 10),
+            Lap(duration=datetime.timedelta(seconds=l.duration / 10),
+                total_time=datetime.timedelta(seconds=l.total_time / 10),
                 distance=l.distance,
                 calories=l.calories,
                 max_speed=l.max_speed,

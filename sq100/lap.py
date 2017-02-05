@@ -1,7 +1,7 @@
 class Lap(object):
 
     def __init__(self,
-                 accrued_time=None,
+                 duration=None,
                  total_time=None,
                  distance=None,
                  calories=None,
@@ -12,13 +12,13 @@ class Lap(object):
                  max_height=None,
                  first_index=None,
                  last_index=None):
-        self.accrued_time = accrued_time
+        self.duration = duration
         self.total_time = total_time
         self.distance = distance
         self.calories = calories
         self.max_speed = max_speed
         self.max_heart_rate = max_heart_rate
-        self.avg_herat_rate = avg_heart_rate
+        self.avg_heart_rate = avg_heart_rate
         self.min_height = min_height
         self.max_height = max_height
         self.first_index = first_index
