@@ -1,21 +1,22 @@
 
-class Track(object):    
+class Track(object):
+
     def __init__(self,
                  ascending_height=None,
                  avg_heart_rate=None,
                  calories=None,
-                 date=None, 
+                 date=None,
                  descending_height=None,
-                 distance=None, 
-                 duration=None, 
+                 distance=None,
+                 duration=None,
                  lap_count=None,
                  max_heart_rate=None,
                  max_height=None,
-                 max_speed=None, 
+                 max_speed=None,
                  memory_block_index=None,
                  min_height=None,
                  track_id=None,
-                 trackpoint_count=None, 
+                 trackpoint_count=None,
                  ):
         self.ascending_height = ascending_height
         self.avg_heart_rate = avg_heart_rate

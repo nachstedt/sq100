@@ -12,7 +12,7 @@ setup(
     url='http://github.com/tnachstedt/sq100/',
     license='Apache Software License',
     author='Timo Nachstedt',
-    tests_require=['pytest', 'mock'],
+    tests_require=['pytest', 'pytest-pep8', 'mock'],
     setup_requires=['pytest-runner>=2.9,<3dev'],
     install_requires=[],
     author_email='mail@nachstedt.com',
@@ -25,7 +25,7 @@ setup(
     platforms='any',
     test_suite='sq100.test.test_sq100',
     scripts=['sq100/sq100.gh600_console'],
-    classifiers = [
+    classifiers=[
         'Programming Language :: Python',
         'Development Status :: 1 - Planning',
         'Natural Language :: English',
@@ -34,7 +34,7 @@ setup(
         'License :: OSI Approved :: Apache Software License',
         'Operating System :: OS Independent',
         'Topic :: Utilities',
-        ],
+    ],
     extras_require={
         'testing': ['pytest'],
     }
