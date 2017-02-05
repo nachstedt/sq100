@@ -179,6 +179,70 @@ def test_unpack_track_info_parameter():
     assert(track.max_height == max_height)
 
 
+def test_unpack_track_list_parameter():
+    track_0_date = datetime.datetime(2016, 7, 23, 14, 30, 11)
+    track_0_no_points = 1230
+    track_0_duration = datetime.timedelta(seconds=465.1)
+    track_0_distance = 1281  # meter
+    track_0_no_laps = 4
+    track_0_memory_block_index = 45
+    track_0_id = 5
+
+    track_1_date = datetime.datetime(2016, 7, 23, 14, 30, 11)
+    track_1_no_points = 1230
+    track_1_duration = datetime.timedelta(seconds=465.1)
+    track_1_distance = 1281  # meter
+    track_1_no_laps = 4
+    track_1_memory_block_index = 45
+    track_1_id = 5
+
+    parameter = (
+        struct.pack(
+            ">6B3I5HB",
+            track_0_date.year - 2000, track_0_date.month, track_0_date.day,
+            track_0_date.hour, track_0_date.minute, track_0_date.second,
+            track_0_no_points,
+            int(round(track_0_duration.total_seconds() * 10)),
+            track_0_distance,
+            track_0_no_laps,
+            0,
+            track_0_memory_block_index,
+            0,
+            track_0_id,
+            0) +
+        struct.pack(
+            ">6B3I5HB",
+            track_1_date.year - 2000, track_1_date.month, track_1_date.day,
+            track_1_date.hour, track_1_date.minute, track_1_date.second,
+            track_1_no_points,
+            int(round(track_1_duration.total_seconds() * 10)),
+            track_1_distance,
+            track_1_no_laps,
+            0,
+            track_1_memory_block_index,
+            0,
+            track_1_id,
+            0))
+
+    tracks = ArivalSQ100._unpack_track_list_parameter(parameter)
+
+    assert(tracks[0].date == track_0_date)
+    assert(tracks[0].no_track_points == track_0_no_points)
+    assert(tracks[0].duration == track_0_duration)
+    assert(tracks[0].distance == track_0_distance)
+    assert(tracks[0].no_laps == track_0_no_laps)
+    assert(tracks[0].memory_block_index == track_0_memory_block_index)
+    assert(tracks[0].id == track_0_id)
+
+    assert(tracks[1].date == track_1_date)
+    assert(tracks[1].no_track_points == track_1_no_points)
+    assert(tracks[1].duration == track_1_duration)
+    assert(tracks[1].distance == track_1_distance)
+    assert(tracks[1].no_laps == track_1_no_laps)
+    assert(tracks[1].memory_block_index == track_1_memory_block_index)
+    assert(tracks[1].id == track_1_id)
+
+
 def test_unpack_track_point_parameter():
     track_date = datetime.datetime(2016, 7, 23, 14, 30, 11)
     track_no_track_points = 1230
