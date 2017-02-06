@@ -9,6 +9,7 @@ from sq100.lap import Lap
 from sq100.track import Track
 from sq100.trackpoint import Trackpoint
 
+
 logger = logging.getLogger(__name__)
 
 
@@ -31,6 +32,42 @@ class ArivalSQ100(object):
         checksum = ArivalSQ100._calc_checksum(payload)
         return struct.pack(">BH%dsB" % len(payload),
                            start_sequence, payload_length, payload, checksum)
+
+    @staticmethod
+    def _get_tracks_message_type(self, msg):
+        msg_type = msg.parameter[28]
+        if msg_type == 0:
+            return "track info"
+        if msg_type == 0xAA:
+            return "lap info"
+        if msg_type == 0x55:
+            return "track points"
+        raise SQ100MessageException("unknown get_tracks message type")
+
+    @staticmethod
+    def _process_get_tracks_lap_info_msg(track, msg):
+        logger.debug("setting laps of track")
+        trackhead, laps = ArivalSQ100._unpack_lap_info_parameter(msg.parameter)
+        assert trackhead.compatible_to(track)
+        track.laps = laps
+        return track
+
+    @staticmethod
+    def _process_get_tracks_track_info_msg(msg):
+        logger.debug("initializing new track")
+        track = ArivalSQ100._unpack_track_info_parameter(msg.parameter)
+        return track
+
+    @staticmethod
+    def _process_get_tracks_track_points_msg(track, msg):
+        trackhead, session_indices, trackpoints = (
+            ArivalSQ100._unpack_track_point_parameter(msg.parameter))
+        assert trackhead.compatible_to(track)
+        assert session_indices[0] == track.no_trackpoints()
+        assert session_indices[1] - session_indices[0] + 1 == len(trackpoints)
+        logger.debug('adding trackpoints %i-%i', *session_indices)
+        track.add_trackpoints(trackpoints)
+        return track
 
     def _query(self, command, parameter=b''):
         return self._unpack_message(
@@ -198,33 +235,19 @@ class ArivalSQ100(object):
         no_tracks = len(memory_indices)
         params = struct.pack(">H%dH" % no_tracks, no_tracks, *memory_indices)
         msg = self._query(0x80, params)
-        track = None
         tracks = []
         while msg.command != 0x8a:
-            msg_type = msg.parameter[28]
-            if msg_type == 0:
-                logger.debug("initializing new track")
-                track = self._unpack_track_info_parameter(msg.parameter)
-            elif msg_type == 0xAA:
-                logger.debug("setting laps of track")
-                trackhead, laps = self._unpack_lap_info_parameter(
-                    msg.parameter)
-                assert trackhead.compatible_to(track)
-                track.laps = laps
-            elif msg_type == 0x55:
-                trackhead, session_indices, trackpoints = (
-                    self._unpack_track_point_parameter(msg.parameter))
-                assert trackhead.compatible_to(track)
-                assert session_indices[0] == track.no_trackpoints()
-                assert session_indices[
-                    1] - session_indices[0] + 1 == len(trackpoints)
-                logger.debug('adding trackpoints %i-%i', *session_indices)
-                track.add_trackpoints(trackpoints)
-                if track.complete():
-                    logger.debug("track complete")
-                    tracks.append(track)
-                    track = None
+            message_type = self._get_tracks_message_type(msg)
+            if message_type == "track info":
+                track = self._process_get_tracks_track_info_msg(msg)
+            elif message_type == "lap info":
+                self._process_get_track_lap_info_msg(track, msg)
+            elif message_type == "track points":
+                self._process_get_tracks_track_points_msg(track, msg)
+            if track.complete():
+                logger.debug("track complete")
+                tracks.append(track)
+                track = None
             msg = self._query(0x81)
-
         logger.info("number of tracks: %d", len(tracks))
         return tracks
