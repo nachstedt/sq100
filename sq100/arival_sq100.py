@@ -34,7 +34,7 @@ class ArivalSQ100(object):
                            start_sequence, payload_length, payload, checksum)
 
     @staticmethod
-    def _get_tracks_message_type(self, msg):
+    def _get_tracks_message_type(msg):
         msg_type = msg.parameter[28]
         if msg_type == 0:
             return "track info"
@@ -48,7 +48,8 @@ class ArivalSQ100(object):
     def _process_get_tracks_lap_info_msg(track, msg):
         logger.debug("setting laps of track")
         trackhead, laps = ArivalSQ100._unpack_lap_info_parameter(msg.parameter)
-        assert trackhead.compatible_to(track)
+        if not track.compatible_to(trackhead):
+            raise SQ100MessageException("unexpected track header")
         track.laps = laps
         return track
 

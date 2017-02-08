@@ -24,6 +24,48 @@ def test_create_message():
     assert(ArivalSQ100._create_message(0x78) == b'\x02\x00\x01\x78\x79')
 
 
+def test_get_tracks_message_type():
+    msg = mock.MagicMock()
+    msg.parameter = bytearray(30)
+    msg.parameter[28] = 0x00
+    assert ArivalSQ100._get_tracks_message_type(msg) == "track info"
+    msg.parameter[28] = 0xAA
+    assert ArivalSQ100._get_tracks_message_type(msg) == "lap info"
+    msg.parameter[28] = 0x55
+    assert ArivalSQ100._get_tracks_message_type(msg) == "track points"
+    msg.parameter[28] = 0xAB
+    with pytest.raises(SQ100MessageException):
+        ArivalSQ100._get_tracks_message_type(msg)
+
+
+@mock.patch('sq100.arival_sq100.ArivalSQ100._unpack_lap_info_parameter')
+def test_process_get_tracks_lap_info_msg(mock_unpack):
+    msg = mock.MagicMock()
+    msg.parameter = "message parameter"
+    track = mock.create_autospec(Track())
+    mock_unpack.return_value = ("the trackhead", "the laps")
+    track.compatible_to.return_value = True
+    ArivalSQ100._process_get_tracks_lap_info_msg(track, msg)
+    assert track.laps == "the laps"
+    mock_unpack.assert_called_once_with("message parameter")
+    track.compatible_to.assert_called_once_with("the trackhead")
+
+
+@mock.patch('sq100.arival_sq100.ArivalSQ100._unpack_lap_info_parameter')
+def test_process_get_tracks_lap_info_msg_incompatible(mock_unpack):
+    msg = mock.MagicMock()
+    msg.parameter = "message parameter"
+    track = mock.create_autospec(Track())
+    track.laps = "empty"
+    mock_unpack.return_value = ("the trackhead", "the laps")
+    track.compatible_to.return_value = False
+    with pytest.raises(SQ100MessageException):
+        ArivalSQ100._process_get_tracks_lap_info_msg(track, msg)
+    assert track.laps == "empty"
+    mock_unpack.assert_called_once_with("message parameter")
+    track.compatible_to.assert_called_once_with("the trackhead")
+
+
 def test_unpack_lap_info_parameter():
     date = datetime.datetime(2016, 7, 23, 14, 30, 11)
     no_track_points = 1230
