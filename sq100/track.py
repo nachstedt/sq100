@@ -1,3 +1,5 @@
+import datetime
+
 
 class Track(object):
 
@@ -58,3 +60,9 @@ class Track(object):
 
     def comlete(self):
         return len(self.track_points) == self.no_track_points
+
+    def update_track_point_times(self):
+        interval = datetime.timedelta(0)
+        for tp in self.track_points:
+            interval += tp.interval
+            tp.time = self.date + interval
