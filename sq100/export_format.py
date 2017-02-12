@@ -1,4 +1,4 @@
-from utilities import Utilities
+from sq100.utilities import Utilities
 
 import configparser
 import os
