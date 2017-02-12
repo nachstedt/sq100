@@ -247,6 +247,7 @@ class ArivalSQ100(object):
                 self._process_get_tracks_track_points_msg(track, msg)
             if track.complete():
                 logger.debug("track complete")
+                track.update_track_point_times()
                 tracks.append(track)
                 track = None
             msg = self._query(0x81)
