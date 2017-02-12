@@ -61,13 +61,13 @@ class ArivalSQ100(object):
 
     @staticmethod
     def _process_get_tracks_track_points_msg(track, msg):
-        trackhead, session_indices, trackpoints = (
+        trackhead, session_indices, track_points = (
             ArivalSQ100._unpack_track_point_parameter(msg.parameter))
         assert trackhead.compatible_to(track)
         assert session_indices[0] == track.no_trackpoints()
-        assert session_indices[1] - session_indices[0] + 1 == len(trackpoints)
+        assert session_indices[1] - session_indices[0] + 1 == len(track_points)
         logger.debug('adding trackpoints %i-%i', *session_indices)
-        track.add_trackpoints(trackpoints)
+        track.track_points.append(track_points)
         return track
 
     def _query(self, command, parameter=b''):
