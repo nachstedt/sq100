@@ -69,6 +69,16 @@ def test_process_get_tracks_lap_info_msg_incompatible(mock_unpack):
     track.compatible_to.assert_called_once_with("the trackhead")
 
 
+@mock.patch('sq100.arival_sq100.ArivalSQ100._unpack_track_info_parameter')
+def test_process_get_tracks_track_info_msg(mock_unpack):
+    msg = mock.MagicMock()
+    msg.parameter = "message parameter"
+    mock_unpack.return_value = ("the track")
+    track = ArivalSQ100._process_get_tracks_track_info_msg(msg)
+    assert track == "the track"
+    mock_unpack.assert_called_once_with("message parameter")
+
+
 def test_unpack_lap_info_parameter():
     date = datetime.datetime(2016, 7, 23, 14, 30, 11)
     no_track_points = 1230
