@@ -33,7 +33,7 @@ class Track(object):
         self.min_height = min_height
         self.no_laps = no_laps
         self.no_track_points = no_track_points
-        self.trackpoints = []
+        self.track_points = []
         self.laps = []
 
     def compatible_to(self, other):
@@ -57,4 +57,4 @@ class Track(object):
             c(self.no_track_points, other.no_track_points))
 
     def comlete(self):
-        return len(self.trackpoints) == self.no_track_points
+        return len(self.track_points) == self.no_track_points

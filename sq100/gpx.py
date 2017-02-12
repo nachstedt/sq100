@@ -27,13 +27,13 @@ def _decimal_element(namespace, name, value):
     return _string_element(namespace, name, "%d" % value)
 
 
-def _garmin_track_point_extension_element():
+def _garmin_track_point_extension_element(track_point):
     trkptex = etree.Element(etree.QName(tpex_ns, "TrackPointExtension"))
-    trkptex.append(_decimal_element(tpex_ns, "hr", 150))
+    trkptex.append(_decimal_element(tpex_ns, "hr", track_point.heart_rate))
     return trkptex
 
 
-def _gpx_element():
+def _gpx_element(tracks):
     nsmap = {None: gpx_ns, 'xsi': xsi_ns, 'garmin': tpex_ns}
     gpx = etree.Element('gpx', nsmap=nsmap)
     gpx.set('version', '1.1')
@@ -41,7 +41,8 @@ def _gpx_element():
     gpx.set(etree.QName(xsi_ns, "schemaLocation"),
             "%s %s %s %s" % (gpx_ns, gpx_ns_def, tpex_ns, tpex_ns_def))
     gpx.append(_metadata_element())
-    gpx.append(_track_element())
+    for i, track in enumerate(tracks):
+        gpx.append(_track_element(track, i))
     return gpx
 
 
@@ -61,50 +62,45 @@ def _string_element(namespace, name, value):
     return elem
 
 
-def _track_element():
-    track = etree.Element(etree.QName(gpx_ns, 'trk'))
-    track.append(_string_element(gpx_ns, "name", "GPS track name"))
-    track.append(_string_element(gpx_ns, "cmt", "GPS track comment"))
-    track.append(_string_element(gpx_ns, "desc", "user description"))
-    track.append(_string_element(gpx_ns, "src", "data source"))
-    track.append(_string_element(gpx_ns, "number", "1"))
-    track.append(_track_segment_element())
-    return track
+def _track_element(track, number):
+    trk = etree.Element(etree.QName(gpx_ns, 'trk'))
+    trk.append(_string_element(gpx_ns, "name", "GPS track name"))
+    trk.append(_string_element(gpx_ns, "cmt", track.id))
+    trk.append(_string_element(gpx_ns, "desc", "user description"))
+    trk.append(_string_element(gpx_ns, "src", "Arival SQ100 computer"))
+    trk.append(_string_element(gpx_ns, "number", number))
+    trk.append(_track_segment_element(track))
+    return trk
 
 
-def _track_point_element():
+def _track_point_element(track_point):
     trkpt = etree.Element(etree.QName(gpx_ns, "trkpt"))
-    trkpt.set("lat", "0")
-    trkpt.set("lon", "0")
-    trkpt.append(_decimal_element(gpx_ns, "ele", 111))
-    trkpt.append(_datetime_element(
-        gpx_ns, "time", datetime.datetime.now()))
-    trkpt.append(_track_point_extensions_element())
+    trkpt.set("lat", track_point.latitude)
+    trkpt.set("lon", track_point.longitude)
+    trkpt.append(_decimal_element(gpx_ns, "ele", track_point.altitude))
+    trkpt.append(_datetime_element(gpx_ns, "time", track_point.time))
+    trkpt.append(_track_point_extensions_element(track_point))
     return trkpt
 
 
-def _track_point_extensions_element():
+def _track_point_extensions_element(track_point):
     extensions = etree.Element(etree.QName(gpx_ns, "extensions"))
-    extensions.append(_garmin_track_point_extension_element())
+    extensions.append(_garmin_track_point_extension_element(track_point))
     return extensions
 
 
-def _track_segment_element():
+def _track_segment_element(track):
     segment = etree.Element(etree.QName(gpx_ns, "trkseg"))
-    for _ in range(5):
-        segment.append(_track_point_element())
+    for track_point in track.track_points:
+        segment.append(_track_point_element(track_point))
     return segment
 
 
 def tracks_to_gpx(tracks, filename):
-    gpx = _gpx_element()
+    gpx = _gpx_element(tracks)
     doc = etree.ElementTree(gpx)
-    doc.write("test.xml",
+    doc.write(filename,
               encoding="UTF-8",
               xml_declaration=True,
               method='xml',
               pretty_print=True)
-
-
-if __name__ == '__main__':
-    tracks_to_gpx([], '')
