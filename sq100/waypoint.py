@@ -1,4 +1,4 @@
-from point import Point
+from sq100.point import Point
 
 
 class Waypoint(Point):
@@ -50,34 +50,3 @@ class Waypoint(Point):
 
     def __str__(self):
         return "%s (%f,%f)" % (self.title, self.latitude, self.longitude)
-
-    def __hex__(self):
-        return "%(title)s00%(type)s%(altitude)s%(latitude)s%(longitude)s" % {
-            'latitude': hex(self.latitude),
-            'longitude': hex(self.longitude),
-            'altitude': Utilities.dec2hex(self.altitude, 4),
-            'type': Utilities.dec2hex(self.type, 2),
-            'title': Utilities.chr2hex(self.title.ljust(6)[:6])
-        }
-
-    def fromHex(self, hex):
-        if len(hex) == 36:
-            def safeConvert(c):
-                # if hex == 00 chr() converts it to space, not \x00
-                if c == '00':
-                    return ' '
-                else:
-                    return Utilities.hex2chr(c)
-
-            self.latitude = Coordinate().fromHex(hex[20:28])
-            self.longitude = Coordinate().fromHex(hex[28:36])
-            self.altitude = Utilities.hex2signedDec(hex[16:20])
-            self.title = (
-                safeConvert(hex[0:2]) + safeConvert(hex[2:4]) +
-                safeConvert(hex[4:6]) + safeConvert(hex[6:8]) +
-                safeConvert(hex[8:10]) + safeConvert(hex[10:12]))
-            self.type = Utilities.hex2dec(hex[12:16])
-
-            return self
-        else:
-            raise GH600ParseException(self.__class__.__name__, len(hex), 36)
