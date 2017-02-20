@@ -5,6 +5,7 @@ import struct
 
 from sq100.arival_sq100 import ArivalSQ100
 from sq100.exceptions import SQ100MessageException
+from sq100.serial_connection import SerialConnection
 from sq100.track import Track
 
 """
@@ -93,6 +94,20 @@ def test_process_get_tracks_track_points_msg(mock_unpack):
                                   'fourth tp']
     mock_unpack.assert_called_once_with('message parameter')
     track.compatible_to.assert_called_once_with('the trackhead')
+
+
+@mock.patch('sq100.arival_sq100.ArivalSQ100._create_message')
+@mock.patch('sq100.arival_sq100.ArivalSQ100._unpack_message')
+def test_query(mock_unpack, mock_create):
+    mock_serial = mock.create_autospec(SerialConnection)
+    sq100 = ArivalSQ100(mock_serial)
+    mock_serial.query.return_value = "returned message"
+    mock_create.return_value = "sent message"
+    mock_unpack.return_value = "unpacked data"
+    assert sq100._query("the command", "the parameter") == "unpacked data"
+    mock_create.assert_called_once_with('the command', 'the parameter')
+    mock_serial.query.assert_called_once_with('sent message')
+    mock_unpack.assert_called_once_with('returned message')
 
 
 def test_unpack_lap_info_parameter():

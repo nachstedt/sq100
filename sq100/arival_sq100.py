@@ -65,9 +65,9 @@ class ArivalSQ100(object):
             ArivalSQ100._unpack_track_point_parameter(msg.parameter))
         if not track.compatible_to(trackhead):
             raise SQ100MessageException('unexpected track header')
-        if not session_indices[0] == len(track.track_points):
+        if session_indices[0] != len(track.track_points):
             raise SQ100MessageException('unexpected session start')
-        if not session_indices[1] - session_indices[0] + 1 == len(track_points):
+        if session_indices[1] - session_indices[0] + 1 != len(track_points):
             raise SQ100MessageException(
                 'session indices incompatible to number of received track '
                 'points')
