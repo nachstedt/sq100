@@ -63,11 +63,16 @@ class ArivalSQ100(object):
     def _process_get_tracks_track_points_msg(track, msg):
         trackhead, session_indices, track_points = (
             ArivalSQ100._unpack_track_point_parameter(msg.parameter))
-        assert trackhead.compatible_to(track)
-        assert session_indices[0] == track.no_trackpoints()
-        assert session_indices[1] - session_indices[0] + 1 == len(track_points)
+        if not track.compatible_to(trackhead):
+            raise SQ100MessageException('unexpected track header')
+        if not session_indices[0] == len(track.track_points):
+            raise SQ100MessageException('unexpected session start')
+        if not session_indices[1] - session_indices[0] + 1 == len(track_points):
+            raise SQ100MessageException(
+                'session indices incompatible to number of received track '
+                'points')
         logger.debug('adding trackpoints %i-%i', *session_indices)
-        track.track_points.append(track_points)
+        track.track_points.extend(track_points)
         return track
 
     def _query(self, command, parameter=b''):

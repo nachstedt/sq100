@@ -79,6 +79,22 @@ def test_process_get_tracks_track_info_msg(mock_unpack):
     mock_unpack.assert_called_once_with("message parameter")
 
 
+@mock.patch('sq100.arival_sq100.ArivalSQ100._unpack_track_point_parameter')
+def test_process_get_tracks_track_points_msg(mock_unpack):
+    msg = mock.MagicMock()
+    msg.parameter = "message parameter"
+    track = mock.create_autospec(Track())
+    track.compatible_to.return_value = True
+    track.track_points = ['first tp', "second tp"]
+    mock_unpack.return_value = ("the trackhead", (2, 3),
+                                ['third tp', 'fourth tp'])
+    track = ArivalSQ100._process_get_tracks_track_points_msg(track, msg)
+    assert track.track_points == ['first tp', 'second tp', 'third tp',
+                                  'fourth tp']
+    mock_unpack.assert_called_once_with('message parameter')
+    track.compatible_to.assert_called_once_with('the trackhead')
+
+
 def test_unpack_lap_info_parameter():
     date = datetime.datetime(2016, 7, 23, 14, 30, 11)
     no_track_points = 1230
