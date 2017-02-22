@@ -6,17 +6,22 @@ import struct
 
 from sq100.exceptions import SQ100MessageException
 from sq100.lap import Lap
+from sq100.serial_connection import SerialConnection
 from sq100.track import Track
 from sq100.trackpoint import Trackpoint
 
 
 logger = logging.getLogger(__name__)
 
+Message = collections.namedtuple("Message", [
+    'command', 'payload_length', 'parameter', 'checksum'])
+
 
 class ArivalSQ100(object):
 
-    def __init__(self, serial):
-        self.serial = serial
+    def __init__(self, port, baudrate, timeout):
+        self.serial = SerialConnection(
+            port=port, baudrate=baudrate, timeout=timeout)
 
     @staticmethod
     def _calc_checksum(payload):
@@ -34,15 +39,13 @@ class ArivalSQ100(object):
                            start_sequence, payload_length, payload, checksum)
 
     @staticmethod
-    def _get_tracks_message_type(msg):
-        msg_type = msg.parameter[28]
-        if msg_type == 0:
-            return "track info"
-        if msg_type == 0xAA:
-            return "lap info"
-        if msg_type == 0x55:
-            return "track points"
-        raise SQ100MessageException("unknown get_tracks message type")
+    def _is_get_tracks_finish_message(msg):
+        return msg.command == 0x8a
+
+    @staticmethod
+    def _pack_get_tracks_parameter(memory_indices):
+        no_tracks = len(memory_indices)
+        return struct.pack(">H%dH" % no_tracks, no_tracks, *memory_indices)
 
     @staticmethod
     def _process_get_tracks_lap_info_msg(track, msg):
@@ -80,6 +83,12 @@ class ArivalSQ100(object):
             self.serial.query(
                 self._create_message(command, parameter)))
 
+    def _track_ids_to_memory_indices(self, track_ids):
+        tracks = self.get_track_list()
+        index = {t.id: t.memory_block_index for t in tracks}
+        memory_indices = [index[track_id] for track_id in track_ids]
+        return memory_indices
+
     @staticmethod
     def _unpack_lap_info_parameter(parameter):
         TrackHeader = collections.namedtuple('TrackHeader', [
@@ -88,6 +97,8 @@ class ArivalSQ100(object):
             'no_laps', 'NA_1', 'msg_type'])
         t = TrackHeader._make(
             struct.unpack(">6B3IH8sB", parameter[:29]))
+        if t.msg_type != 0xAA:
+            raise SQ100MessageException("wrong get_tracks message type")
         track = Track(
             date=datetime.datetime(
                 2000 + t.year, t.month, t.day, t.hour, t.minute, t.second),
@@ -120,8 +131,6 @@ class ArivalSQ100(object):
 
     @staticmethod
     def _unpack_message(message):
-        Message = collections.namedtuple("Message", [
-            'command', 'payload_length', 'parameter', 'checksum'])
         msg = Message._make(
             struct.unpack(">BH%dsB" % (len(message) - 4), message))
         if msg.payload_length != len(msg.parameter):
@@ -139,6 +148,8 @@ class ArivalSQ100(object):
             'msg_type'])
         header = TrackHeader._make(
             struct.unpack(">6B3I5HB", parameter[:29]))
+        if header.msg_type != 0x00:
+            raise SQ100MessageException("wrong get_tracks message type")
         TrackInfo = collections.namedtuple('TrackInfo', [
             'calories', 'NA_1', 'max_speed', 'max_heart_rate',
             'avg_heart_rate', 'asc_height', 'des_height', 'min_height',
@@ -198,6 +209,8 @@ class ArivalSQ100(object):
             'msg_type'])
         t = TrackHeader._make(
             struct.unpack(">6B3IH2IB", parameter[:29]))
+        if t.msg_type != 0x55:
+            raise SQ100MessageException("wrong get_tracks message type")
         track = Track(
             date=datetime.datetime(
                 2000 + t.year, t.month, t.day, t.hour, t.minute, t.second),
@@ -232,29 +245,25 @@ class ArivalSQ100(object):
 
     def get_track_list(self):
         msg = self._query(0x78)
-        number_tracks = msg.payload_length // 29
-        logger.info('%i tracks found' % number_tracks)
         tracks = self._unpack_track_list_parameter(msg.parameter)
+        logger.info('received list of %i tracks' % len(tracks))
         return tracks
 
-    def get_tracks(self, memory_indices):
-        no_tracks = len(memory_indices)
-        params = struct.pack(">H%dH" % no_tracks, no_tracks, *memory_indices)
+    def get_tracks(self, track_ids):
+        memory_indices = self._track_ids_to_memory_indices(track_ids)
+        params = self._pack_get_tracks_parameter(memory_indices)
         msg = self._query(0x80, params)
         tracks = []
-        while msg.command != 0x8a:
-            message_type = self._get_tracks_message_type(msg)
-            if message_type == "track info":
-                track = self._process_get_tracks_track_info_msg(msg)
-            elif message_type == "lap info":
-                self._process_get_track_lap_info_msg(track, msg)
-            elif message_type == "track points":
-                self._process_get_tracks_track_points_msg(track, msg)
-            if track.complete():
-                logger.debug("track complete")
-                track.update_track_point_times()
-                tracks.append(track)
-                track = None
+        for _ in range(len(track_ids)):
+            track = self._process_get_tracks_track_info_msg(msg)
             msg = self._query(0x81)
-        logger.info("number of tracks: %d", len(tracks))
+            self._process_get_tracks_lap_info_msg(track, msg)
+            while not track.complete():
+                msg = self._query(0x81)
+                self._process_get_tracks_track_points_msg(track, msg)
+            tracks.append(track)
+            msg = self._query(0x81)
+        if not self._is_get_tracks_finish_message(msg):
+            raise SQ100MessageException('expected end of transmission message')
+        logger.info("number of downloaded tracks: %d", len(tracks))
         return tracks
