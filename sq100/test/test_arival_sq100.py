@@ -1,11 +1,10 @@
 import datetime
-import mock
 import pytest
 import struct
+from mock import call, create_autospec, patch
 
-from sq100.arival_sq100 import ArivalSQ100
+from sq100.arival_sq100 import ArivalSQ100, Message
 from sq100.exceptions import SQ100MessageException
-from sq100.serial_connection import SerialConnection
 from sq100.track import Track
 
 """
@@ -28,25 +27,30 @@ def test_create_message():
     assert(ArivalSQ100._create_message(0x78) == b'\x02\x00\x01\x78\x79')
 
 
-def test_get_tracks_message_type():
-    msg = mock.MagicMock()
-    msg.parameter = bytearray(30)
-    msg.parameter[28] = 0x00
-    assert ArivalSQ100._get_tracks_message_type(msg) == "track info"
-    msg.parameter[28] = 0xAA
-    assert ArivalSQ100._get_tracks_message_type(msg) == "lap info"
-    msg.parameter[28] = 0x55
-    assert ArivalSQ100._get_tracks_message_type(msg) == "track points"
-    msg.parameter[28] = 0xAB
-    with pytest.raises(SQ100MessageException):
-        ArivalSQ100._get_tracks_message_type(msg)
+def test_is_get_tracks_finish_message_true():
+    msg = create_autospec(Message)
+    msg.command = 0x8a
+    assert ArivalSQ100._is_get_tracks_finish_message(msg) is True
 
 
-@mock.patch('sq100.arival_sq100.ArivalSQ100._unpack_lap_info_parameter')
+def test_is_get_tracks_finish_message_false():
+    msg = create_autospec(Message)
+    msg.command = 0x80
+    assert ArivalSQ100._is_get_tracks_finish_message(msg) is False
+
+
+def test_pack_get_tracks_parameter():
+    memory_indices = [10, 22, 50]
+    parameter = ArivalSQ100._pack_get_tracks_parameter(memory_indices)
+    data = struct.unpack(">4H", parameter)
+    assert data == (3, 10, 22, 50)
+
+
+@patch('sq100.arival_sq100.ArivalSQ100._unpack_lap_info_parameter')
 def test_process_get_tracks_lap_info_msg(mock_unpack):
-    msg = mock.MagicMock()
+    msg = create_autospec(Message)
     msg.parameter = "message parameter"
-    track = mock.create_autospec(Track())
+    track = create_autospec(Track())
     mock_unpack.return_value = ("the trackhead", "the laps")
     track.compatible_to.return_value = True
     ArivalSQ100._process_get_tracks_lap_info_msg(track, msg)
@@ -55,11 +59,11 @@ def test_process_get_tracks_lap_info_msg(mock_unpack):
     track.compatible_to.assert_called_once_with("the trackhead")
 
 
-@mock.patch('sq100.arival_sq100.ArivalSQ100._unpack_lap_info_parameter')
+@patch('sq100.arival_sq100.ArivalSQ100._unpack_lap_info_parameter')
 def test_process_get_tracks_lap_info_msg_incompatible(mock_unpack):
-    msg = mock.MagicMock()
+    msg = create_autospec(Message)
     msg.parameter = "message parameter"
-    track = mock.create_autospec(Track())
+    track = create_autospec(Track())
     track.laps = "empty"
     mock_unpack.return_value = ("the trackhead", "the laps")
     track.compatible_to.return_value = False
@@ -70,9 +74,9 @@ def test_process_get_tracks_lap_info_msg_incompatible(mock_unpack):
     track.compatible_to.assert_called_once_with("the trackhead")
 
 
-@mock.patch('sq100.arival_sq100.ArivalSQ100._unpack_track_info_parameter')
+@patch('sq100.arival_sq100.ArivalSQ100._unpack_track_info_parameter')
 def test_process_get_tracks_track_info_msg(mock_unpack):
-    msg = mock.MagicMock()
+    msg = create_autospec(Message)
     msg.parameter = "message parameter"
     mock_unpack.return_value = ("the track")
     track = ArivalSQ100._process_get_tracks_track_info_msg(msg)
@@ -80,11 +84,11 @@ def test_process_get_tracks_track_info_msg(mock_unpack):
     mock_unpack.assert_called_once_with("message parameter")
 
 
-@mock.patch('sq100.arival_sq100.ArivalSQ100._unpack_track_point_parameter')
+@patch('sq100.arival_sq100.ArivalSQ100._unpack_track_point_parameter')
 def test_process_get_tracks_track_points_msg(mock_unpack):
-    msg = mock.MagicMock()
+    msg = create_autospec(Message)
     msg.parameter = "message parameter"
-    track = mock.create_autospec(Track())
+    track = create_autospec(Track())
     track.compatible_to.return_value = True
     track.track_points = ['first tp', "second tp"]
     mock_unpack.return_value = ("the trackhead", (2, 3),
@@ -96,11 +100,51 @@ def test_process_get_tracks_track_points_msg(mock_unpack):
     track.compatible_to.assert_called_once_with('the trackhead')
 
 
-@mock.patch('sq100.arival_sq100.ArivalSQ100._create_message')
-@mock.patch('sq100.arival_sq100.ArivalSQ100._unpack_message')
-def test_query(mock_unpack, mock_create):
-    mock_serial = mock.create_autospec(SerialConnection)
-    sq100 = ArivalSQ100(mock_serial)
+@patch('sq100.arival_sq100.ArivalSQ100._unpack_track_point_parameter')
+def test_process_get_tracks_track_points_msg_uncompatible_track(mock_unpack):
+    msg = create_autospec(Message)
+    msg.parameter = "message parameter"
+    track = create_autospec(Track())
+    track.compatible_to.return_value = False
+    track.track_points = ['first tp', "second tp"]
+    mock_unpack.return_value = (
+        "the trackhead", (2, 3), ['third tp', 'fourth tp'])
+    with pytest.raises(SQ100MessageException):
+        ArivalSQ100._process_get_tracks_track_points_msg(track, msg)
+
+
+@patch('sq100.arival_sq100.ArivalSQ100._unpack_track_point_parameter')
+def test_process_get_tracks_track_points_msg_wrong_session_start(mock_unpack):
+    msg = create_autospec(Message)
+    msg.parameter = "message parameter"
+    track = create_autospec(Track())
+    track.compatible_to.return_value = True
+    track.track_points = ['first tp', "second tp"]
+    mock_unpack.return_value = (
+        "the trackhead", (3, 4), ['third tp', 'fourth tp'])
+    with pytest.raises(SQ100MessageException):
+        ArivalSQ100._process_get_tracks_track_points_msg(track, msg)
+
+
+@patch('sq100.arival_sq100.ArivalSQ100._unpack_track_point_parameter')
+def test_process_get_tracks_track_points_msg_wrong_session_length(mock_unpack):
+    msg = create_autospec(Message)
+    msg.parameter = "message parameter"
+    track = create_autospec(Track())
+    track.compatible_to.return_value = True
+    track.track_points = ['first tp', "second tp"]
+    mock_unpack.return_value = (
+        "the trackhead", (2, 5), ['third tp', 'fourth tp'])
+    with pytest.raises(SQ100MessageException):
+        ArivalSQ100._process_get_tracks_track_points_msg(track, msg)
+
+
+@patch('sq100.arival_sq100.ArivalSQ100._create_message')
+@patch('sq100.arival_sq100.ArivalSQ100._unpack_message')
+@patch('sq100.arival_sq100.SerialConnection')
+def test_query(mock_serial_connection, mock_unpack, mock_create):
+    mock_serial = mock_serial_connection.return_value
+    sq100 = ArivalSQ100(port=None, baudrate=None, timeout=None)
     mock_serial.query.return_value = "returned message"
     mock_create.return_value = "sent message"
     mock_unpack.return_value = "unpacked data"
@@ -108,6 +152,18 @@ def test_query(mock_unpack, mock_create):
     mock_create.assert_called_once_with('the command', 'the parameter')
     mock_serial.query.assert_called_once_with('sent message')
     mock_unpack.assert_called_once_with('returned message')
+
+
+@patch.object(ArivalSQ100, "get_track_list")
+def test_track_ids_to_memory_indices(mock_get_track_list):
+    mock_get_track_list.return_value = [
+        Track(track_id=1, memory_block_index=10),
+        Track(track_id=3, memory_block_index=200),
+        Track(track_id=10, memory_block_index=35),
+        Track(track_id=8, memory_block_index=111)]
+    sq100 = ArivalSQ100(port=None, baudrate=None, timeout=None)
+    memory_indices = sq100._track_ids_to_memory_indices([3, 1, 10])
+    assert memory_indices == [200, 10, 35]
 
 
 def test_unpack_lap_info_parameter():
@@ -202,6 +258,27 @@ def test_unpack_lap_info_parameter():
     assert(laps[1].last_index == lap_2_last_index)
 
 
+def test_unpack_lap_info_parameter_wrong_message_type():
+    date = datetime.datetime(2016, 7, 23, 14, 30, 11)
+    no_track_points = 1230
+    duration = datetime.timedelta(seconds=2345.5)
+    distance = 4321  # meter
+    no_laps = 0
+    msg_type = 0xAB
+
+    parameter = (
+        struct.pack(
+            ">6B3IH8sB",
+            date.year - 2000, date.month, date.day,
+            date.hour, date.minute, date.second,
+            no_track_points,
+            round(duration.total_seconds() * 10), distance,
+            no_laps, b'', msg_type))
+
+    with pytest.raises(SQ100MessageException):
+        ArivalSQ100._unpack_lap_info_parameter(parameter)
+
+
 def test_unpack_message():
     command = 123
     parameter = b"Hello world"
@@ -214,6 +291,28 @@ def test_unpack_message():
     assert(data.parameter == parameter)
     assert(data.payload_length == payload_length)
     assert(data.checksum == checksum)
+
+
+def test_unpack_message_wrong_checksum():
+    command = 123
+    parameter = b"Hello world"
+    payload_length = len(parameter)
+    checksum = ArivalSQ100._calc_checksum(parameter)
+    message = struct.pack(">BH%dsB" % len(parameter), command,
+                          payload_length, parameter, checksum + 1)
+    with pytest.raises(SQ100MessageException):
+        ArivalSQ100._unpack_message(message)
+
+
+def test_unpack_message_wrong_payload_length():
+    command = 123
+    parameter = b"Hello world"
+    payload_length = len(parameter)
+    checksum = ArivalSQ100._calc_checksum(parameter)
+    message = struct.pack(">BH%dsB" % len(parameter), command,
+                          payload_length + 1, parameter, checksum)
+    with pytest.raises(SQ100MessageException):
+        ArivalSQ100._unpack_message(message)
 
 
 def test_unpack_track_info_parameter():
@@ -263,6 +362,42 @@ def test_unpack_track_info_parameter():
     assert(track.descending_height == des_height)
     assert(track.min_height == min_height)
     assert(track.max_height == max_height)
+
+
+def test_unpack_track_info_parameter_wrong_message_type():
+    date = datetime.datetime(2016, 7, 23, 14, 30, 11)
+    no_track_points = 1230
+    duration = datetime.timedelta(seconds=2345.9)
+    distance = 4321
+    no_laps = 3
+    memory_block_index = 51
+    track_id = 13
+    calories = 714
+    max_speed = 89
+    max_heart_rate = 198
+    avg_heart_rate = 153
+    asc_height = 873
+    des_height = 543
+    min_height = 345
+    max_height = 1122
+    msg_type = 1
+
+    parameter = struct.pack(
+        ">6B3I5HB3H2B4H13s",
+        date.year - 2000, date.month, date.day,
+        date.hour, date.minute, date.second,
+        no_track_points,
+        round(duration.total_seconds() * 10),
+        distance,
+        no_laps, 0, memory_block_index, 0, track_id,
+        msg_type,
+        calories, 0, max_speed,
+        max_heart_rate, avg_heart_rate,
+        asc_height, des_height, min_height, max_height,
+        b'')
+
+    with pytest.raises(SQ100MessageException):
+        ArivalSQ100._unpack_track_info_parameter(parameter)
 
 
 def test_unpack_track_list_parameter():
@@ -408,3 +543,158 @@ def test_unpack_track_point_parameter():
     assert(track_points[1].speed == tp_1_speed)
     assert(track_points[1].heart_rate == tp_1_heart_rate)
     assert(track_points[1].interval == tp_1_interval)
+
+
+def test_unpack_track_point_parameter_wrong_message_type():
+    track_date = datetime.datetime(2016, 7, 23, 14, 30, 11)
+    track_no_track_points = 1230
+    track_duration = datetime.timedelta(seconds=2345.2)
+    track_distance = 4321  # meter
+    track_no_laps = 2
+    session_start = 120
+    session_last = 121
+    msg_type = 0x56
+
+    parameter = (
+        struct.pack(
+            ">6B3IH2IB",
+            track_date.year - 2000, track_date.month, track_date.day,
+            track_date.hour, track_date.minute, track_date.second,
+            track_no_track_points,
+            round(track_duration.total_seconds() * 10),
+            track_distance,
+            track_no_laps, session_start, session_last, msg_type))
+
+    with pytest.raises(SQ100MessageException):
+        ArivalSQ100._unpack_track_point_parameter(parameter)
+
+
+@patch('sq100.arival_sq100.SerialConnection')
+def test_connect(mock_serial_connection):
+    mock_serial = mock_serial_connection.return_value
+    sq100 = ArivalSQ100(port=None, baudrate=None, timeout=None)
+    sq100.connect()
+    mock_serial.connect.assert_called_once()
+
+
+@patch('sq100.arival_sq100.SerialConnection')
+def test_disconnect(mock_serial_connection):
+    mock_serial = mock_serial_connection.return_value
+    sq100 = ArivalSQ100(port=None, baudrate=None, timeout=None)
+    sq100.disconnect()
+    mock_serial.disconnect.assert_called_once()
+
+
+@patch.object(ArivalSQ100, "_query")
+@patch.object(ArivalSQ100, "_unpack_track_list_parameter")
+def test_get_track_list(mock_unpack, mock_query):
+    sq100 = ArivalSQ100(port=None, baudrate=None, timeout=None)
+    mock_message = create_autospec(Message)
+    mock_message.parameter = "the parameter"
+    mock_query.return_value = mock_message
+    mock_unpack.return_value = "the tracks"
+    assert sq100.get_track_list() == "the tracks"
+    mock_query.assert_called_once_with(0x78)
+    mock_unpack.assert_called_once_with("the parameter")
+
+
+@patch('sq100.arival_sq100.ArivalSQ100._is_get_tracks_finish_message')
+@patch('sq100.arival_sq100.ArivalSQ100._process_get_tracks_track_points_msg')
+@patch('sq100.arival_sq100.ArivalSQ100._process_get_tracks_lap_info_msg')
+@patch('sq100.arival_sq100.ArivalSQ100._process_get_tracks_track_info_msg')
+@patch.object(ArivalSQ100, '_query')
+@patch('sq100.arival_sq100.ArivalSQ100._pack_get_tracks_parameter')
+@patch('sq100.arival_sq100.ArivalSQ100._track_ids_to_memory_indices')
+def test_get_tracks(mock_id2index, mock_pack, mock_query,
+                    mock_process_track_info, mock_process_lap_info,
+                    mock_process_track_points, mock_is_finish):
+    sq100 = ArivalSQ100(port=None, baudrate=None, timeout=None)
+    mock_id2index.return_value = "the indices"
+    mock_pack.return_value = "the request parameter"
+    mock_query.side_effect = [
+        "track info 1", "lap info 1", "track points 1.1", "track points 1.2",
+        "track info 2", "lap info 2", "track points 2.1", "track points 2.2",
+        "the end"]
+
+    def track_info_side_effect(msg):
+        track = create_autospec(Track)
+        track.track_info = msg
+        track.laps = None
+        track.track_points = []
+        track.complete = lambda: len(track.track_points) == 2
+        return track
+
+    def lap_info_side_effect(track, msg):
+        track.laps = msg
+
+    def track_points_side_effect(track, msg):
+        track.track_points.append(msg)
+
+    mock_process_track_info.side_effect = track_info_side_effect
+    mock_process_lap_info.side_effect = lap_info_side_effect
+    mock_process_track_points.side_effect = track_points_side_effect
+    mock_is_finish.side_effect = lambda msg: msg == "the end"
+
+    tracks = sq100.get_tracks([1, 5])
+    assert tracks[0].track_info == "track info 1"
+    assert tracks[0].laps == "lap info 1"
+    assert tracks[0].track_points == ["track points 1.1", "track points 1.2"]
+    assert tracks[1].track_info == "track info 2"
+    assert tracks[1].laps == "lap info 2"
+    assert tracks[1].track_points == ["track points 2.1", "track points 2.2"]
+
+    mock_id2index.assert_called_once_with([1, 5])
+    mock_pack.assert_called_with("the indices")
+    mock_query.assert_has_calls([
+        call(0x80, "the request parameter"),
+        call(0x81), call(0x81), call(0x81), call(0x81),
+        call(0x81), call(0x81), call(0x81), call(0x81)])
+    mock_process_track_info.assert_has_calls([
+        call("track info 1"), call("track info 2")])
+    mock_process_lap_info.assert_has_calls([
+        call(tracks[0], "lap info 1"), call(tracks[1], "lap info 2")])
+    mock_process_track_points.assert_has_calls([
+        call(tracks[0], "track points 1.1"),
+        call(tracks[0], "track points 1.2"),
+        call(tracks[1], "track points 2.1"),
+        call(tracks[1], "track points 2.2")])
+    mock_is_finish.assert_called_once_with("the end")
+
+
+@patch('sq100.arival_sq100.ArivalSQ100._is_get_tracks_finish_message')
+@patch('sq100.arival_sq100.ArivalSQ100._process_get_tracks_track_points_msg')
+@patch('sq100.arival_sq100.ArivalSQ100._process_get_tracks_lap_info_msg')
+@patch('sq100.arival_sq100.ArivalSQ100._process_get_tracks_track_info_msg')
+@patch.object(ArivalSQ100, '_query')
+@patch('sq100.arival_sq100.ArivalSQ100._pack_get_tracks_parameter')
+@patch('sq100.arival_sq100.ArivalSQ100._track_ids_to_memory_indices')
+def test_get_tracks_no_finish(mock_id2index, mock_pack, mock_query,
+                              mock_process_track_info, mock_process_lap_info,
+                              mock_process_track_points, mock_is_finish):
+    sq100 = ArivalSQ100(port=None, baudrate=None, timeout=None)
+    mock_id2index.return_value = "the indices"
+    mock_pack.return_value = "the request parameter"
+    mock_query.side_effect = [
+        "track info 1", "lap info 1", "track points 1", "not the end"]
+
+    def track_info_side_effect(msg):
+        track = create_autospec(Track)
+        track.track_info = msg
+        track.laps = None
+        track.track_points = []
+        track.complete = lambda: len(track.track_points) == 1
+        return track
+
+    def lap_info_side_effect(track, msg):
+        track.laps = msg
+
+    def track_points_side_effect(track, msg):
+        track.track_points.append(msg)
+
+    mock_process_track_info.side_effect = track_info_side_effect
+    mock_process_lap_info.side_effect = lap_info_side_effect
+    mock_process_track_points.side_effect = track_points_side_effect
+    mock_is_finish.side_effect = lambda msg: msg == "the end"
+
+    with pytest.raises(SQ100MessageException):
+        sq100.get_tracks([5])

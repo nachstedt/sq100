@@ -9,9 +9,6 @@ import sys
 import tabulate
 
 from sq100.arival_sq100 import ArivalSQ100
-from sq100.export_format import ExportFormat
-from sq100.serial_connection import SerialConnection
-from sq100.utilities import Utilities
 
 
 class SQ100(object):
@@ -22,11 +19,11 @@ class SQ100(object):
         self.computer = None
 
     def connect(self):
-        serial = SerialConnection(
+        self.computer = ArivalSQ100(
             port=self.config['serial'].get("comport", '/dev/ttyUSB0'),
             baudrate=self.config['serial'].getint("baudrate", 115200),
             timeout=self.config['serial'].getint("timeout", 2))
-        self.computer = ArivalSQ100(serial)
+        self.computer.connect()
 
     def delete_all_tracks(self):
         print("Delete all Tracks")
