@@ -10,17 +10,19 @@ tpex_ns = 'http://www.garmin.com/xmlschemas/TrackPointExtension/v2'
 tpex_ns_def = "https://www8.garmin.com/xmlschemas/TrackPointExtensionv2.xsd"
 
 
-def _bounds_element():
+def _bounds_element(min_latitude, max_latitude, min_longitude, max_longitude):
     bounds = etree.Element(etree.QName(gpx_ns, "bounds"))
-    bounds.set("minlat", "0")
-    bounds.set("minlon", "0")
-    bounds.set("maxlat", "0")
-    bounds.set("maxlon", "0")
+    bounds.set("minlat", str(min_latitude))
+    bounds.set("minlon", str(min_longitude))
+    bounds.set("maxlat", str(max_latitude))
+    bounds.set("maxlon", str(max_longitude))
     return bounds
 
 
 def _datetime_element(namespace, name, value):
-    return _string_element(namespace, name, value.isoformat())
+    if value.tzinfo is not None:
+        value = (value - value.utcoffset()).replace(tzinfo=None)
+    return _string_element(namespace, name, "%sZ" % value.isoformat())
 
 
 def _decimal_element(namespace, name, value):
