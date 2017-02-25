@@ -5,10 +5,8 @@ import logging
 import struct
 
 from sq100.exceptions import SQ100MessageException
-from sq100.lap import Lap
 from sq100.serial_connection import SerialConnection
-from sq100.track import Track
-from sq100.trackpoint import Trackpoint
+from sq100.types import Lap, Track, TrackPoint
 
 
 logger = logging.getLogger(__name__)
@@ -226,7 +224,7 @@ class ArivalSQ100(object):
             TrackPointData._make,
             struct.iter_unpack('>2i3HBHH6s', parameter[29:]))
         trackpoints = [
-            Trackpoint(
+            TrackPoint(
                 latitude=round(t.latitude * 1e-6, 6),
                 longitude=round(t.longitude * 1e-6, 6),
                 altitude=t.altitude,
