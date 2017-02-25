@@ -142,7 +142,7 @@ class Track(object):
             c(self.no_laps, other.no_laps) and
             c(self.no_track_points, other.no_track_points))
 
-    def comlete(self):
+    def complete(self):
         return len(self.track_points) == self.no_track_points
 
     def update_track_point_times(self):

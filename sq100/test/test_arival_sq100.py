@@ -621,7 +621,7 @@ def test_get_tracks(mock_id2index, mock_pack, mock_query,
         track.track_info = msg
         track.laps = None
         track.track_points = []
-        track.complete = lambda: len(track.track_points) == 2
+        track.complete.side_effect = lambda: len(track.track_points) == 2
         return track
 
     def lap_info_side_effect(track, msg):
