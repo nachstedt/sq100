@@ -61,7 +61,7 @@ def test_create_garmin_track_point_extension_element():
     track_point.heart_rate = 150
     ns = 'http://www.garmin.com/xmlschemas/TrackPointExtension/v2'
     elem = gpx._create_garmin_track_point_extension_element(track_point)
-    assert elem.tag == ("{%s}garmin" % ns)
+    assert elem.tag == ("{%s}TrackPointExtension" % ns)
     print(etree.tostring(elem))
     assert int(elem.find('{%s}hr' % ns).text) == 150
 

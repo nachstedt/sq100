@@ -120,7 +120,13 @@ class Track(object):
         self.laps = laps
 
     def bounds(self):
-        raise NotImplementedError
+        return CoordinateBounds(
+            minimum=Point(
+                latitude=min(t.latitude for t in self.track_points),
+                longitude=min(t.longitude for t in self.track_points)),
+            maximum=Point(
+                latitude=max(t.latitude for t in self.track_points),
+                longitude=max(t.longitude for t in self.track_points)))
 
     def compatible_to(self, other):
         def c(a, b):
@@ -149,7 +155,7 @@ class Track(object):
         interval = datetime.timedelta(0)
         for tp in self.track_points:
             interval += tp.interval
-            tp.time = self.date + interval
+            tp.date = self.date + interval
 
 
 class TrackPoint(Point):
