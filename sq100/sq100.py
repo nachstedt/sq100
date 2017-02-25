@@ -9,6 +9,7 @@ import sys
 import tabulate
 
 from sq100.arival_sq100 import ArivalSQ100
+from sq100.gpx import tracks_to_gpx
 
 
 class SQ100(object):
@@ -42,10 +43,13 @@ class SQ100(object):
         print("* %s waypoints on watch" % unit['waypoint_count'])
         print("* %s trackpoints on watch" % unit['trackpoint_count'])
 
-    def download_tracks(self, track_ids=[], format='gpx', merge=False):
-        ef = ExportFormat(format)
+    def download_tracks(self, track_ids=[], merge=False):
         tracks = self.computer.get_tracks(track_ids)
-        print(tracks)
+        if merge:
+            tracks_to_gpx(tracks, "downloaded_tracks.gpx")
+            return
+        for track in tracks:
+            tracks_to_gpx([track], "downloaded_tracks-%s.gpx" % track.id)
 
     def download_waypoints(self):
         print("Download Waypoints")
@@ -60,7 +64,7 @@ class SQ100(object):
         tracks = self.computer.get_track_list()
         if tracks:
             table = [[track.id, track.date, track.distance, track.duration,
-                      track.trackpoint_count, track.lap_count,
+                      track.no_track_points, track.no_laps,
                       track.memory_block_index]
                      for track in tracks]
             headers = ["id", "date", "distance", "duration",
@@ -97,30 +101,41 @@ class SQ100(object):
         print('Imported %i Waypoints' % results)
 
 
+def parse_range(astr):
+    result = set()
+    for part in astr.split(','):
+        x = part.split('-')
+        result.update(range(int(x[0]), int(x[-1]) + 1))
+    return sorted(result)
+
+
 class SQ100Shell(cmd.Cmd):
     intro = "Welcome to SQ100. Type help or ? to list commands.\n"
     prompt = '(sq100)'
 
     def __init__(self):
+        super().__init__()
         self.sq100 = SQ100()
+        self.sq100.connect()
 
-    def do_delete_all_tracks(self):
+    def do_delete_all_tracks(self, arg):
         "delete all tracks on device"
         self.sq100.delete_all_tracks()
 
-    def do_delete_all_waypoints(self):
+    def do_delete_all_waypoints(self, arg):
         "delete all waypoints on device"
         self.sq100.delete_all_waypoints()
 
-    def do_export(self):
+    def do_download(self, arg):
         "export selected tracks into file: export 2,5"
-        self.sq100.export_tracks()
+        track_ids = parse_range(arg)
+        self.sq100.download_tracks(track_ids=track_ids)
 
-    def do_export_all(self):
+    def do_export_all(self, arg):
         "export all tracks"
         self.sq100.export_all_tracks()
 
-    def do_list(self):
+    def do_list(self, arg):
         "show list of all tracks on the device: list"
         self.sq100.show_tracklist()
 
@@ -128,7 +143,7 @@ class SQ100Shell(cmd.Cmd):
         "Exit the application"
         return True
 
-    def do_upload(self):
+    def do_upload(self, arg):
         "upload tracks"
         self.sq100.upload_tracks()
         pass

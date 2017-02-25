@@ -259,6 +259,7 @@ class ArivalSQ100(object):
             while not track.complete():
                 msg = self._query(0x81)
                 self._process_get_tracks_track_points_msg(track, msg)
+            track.update_track_point_times()
             tracks.append(track)
             msg = self._query(0x81)
         if not self._is_get_tracks_finish_message(msg):

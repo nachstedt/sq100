@@ -41,9 +41,8 @@ def _create_decimal_element(ns, tag, value):
     return _create_string_element(ns, tag, str(value))
 
 
-def _create_garmin_track_point_extension_element(track_point, ns=tpex_ns,
-                                                 tag="garmin"):
-    trkptex = etree.Element(etree.QName(ns, tag))
+def _create_garmin_track_point_extension_element(track_point, ns=tpex_ns):
+    trkptex = etree.Element(etree.QName(ns, "TrackPointExtension"))
     trkptex.append(
         _create_decimal_element(tpex_ns, "hr", track_point.heart_rate))
     return trkptex
