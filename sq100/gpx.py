@@ -1,6 +1,8 @@
 import datetime
 from lxml import etree
 
+from sq100.track import CoordinateBounds
+from sq100.point import Point
 
 "namespacces"
 gpx_ns = "http://www.topografix.com/GPX/1/1"
@@ -10,28 +12,39 @@ tpex_ns = 'http://www.garmin.com/xmlschemas/TrackPointExtension/v2'
 tpex_ns_def = "https://www8.garmin.com/xmlschemas/TrackPointExtensionv2.xsd"
 
 
-def _create_bounds_element(min_latitude, max_latitude, min_longitude,
-                           max_longitude):
-    bounds = etree.Element(etree.QName(gpx_ns, "bounds"))
-    bounds.set("minlat", str(min_latitude))
-    bounds.set("minlon", str(min_longitude))
-    bounds.set("maxlat", str(max_latitude))
-    bounds.set("maxlon", str(max_longitude))
-    return bounds
+def _calc_tracks_bounds(tracks):
+    track_bounds = [t.bounds() for t in tracks]
+    min_latitude = min([b.min.latitude for b in track_bounds])
+    min_longitude = min([b.min.longitude for b in track_bounds])
+    max_latitude = max([b.max.latitude for b in track_bounds])
+    max_longitude = max([b.max.longitude for b in track_bounds])
+    return CoordinateBounds(
+        minimum=Point(latitude=min_latitude, longitude=min_longitude),
+        maximum=Point(latitude=max_latitude, longitude=max_longitude))
 
 
-def _create_datetime_element(namespace, name, value):
+def _create_bounds_element(value, ns=gpx_ns, tag='bounds',):
+    elem = etree.Element(etree.QName(ns, tag))
+    elem.set("minlat", str(value.min.latitude))
+    elem.set("minlon", str(value.min.longitude))
+    elem.set("maxlat", str(value.max.latitude))
+    elem.set("maxlon", str(value.max.longitude))
+    return elem
+
+
+def _create_datetime_element(ns, tag, value):
     if value.tzinfo is not None:
         value = (value - value.utcoffset()).replace(tzinfo=None)
-    return _create_string_element(namespace, name, "%sZ" % value.isoformat())
+    return _create_string_element(ns, tag, "%sZ" % value.isoformat())
 
 
-def _create_decimal_element(namespace, name, value):
-    return _create_string_element(namespace, name, "%d" % value)
+def _create_decimal_element(ns, tag, value):
+    return _create_string_element(ns, tag, str(value))
 
 
-def _create_garmin_track_point_extension_element(track_point):
-    trkptex = etree.Element(etree.QName(tpex_ns, "TrackPointExtension"))
+def _create_garmin_track_point_extension_element(track_point, ns=tpex_ns,
+                                                 tag="garmin"):
+    trkptex = etree.Element(etree.QName(ns, tag))
     trkptex.append(
         _create_decimal_element(tpex_ns, "hr", track_point.heart_rate))
     return trkptex
@@ -44,58 +57,66 @@ def _create_gpx_element(tracks):
     gpx.set("creator", 'https://github.com/tnachstedt/sq100')
     gpx.set(etree.QName(xsi_ns, "schemaLocation"),
             "%s %s %s %s" % (gpx_ns, gpx_ns_def, tpex_ns, tpex_ns_def))
-    gpx.append(_create_metadata_element())
+    gpx.append(_create_metadata_element(bounds=_calc_tracks_bounds(tracks)))
     for i, track in enumerate(tracks):
-        gpx.append(_create_track_element(track, i))
+        gpx.append(_create_track_element(track=track, number=i))
     return gpx
 
 
-def _create_metadata_element():
-    metadata = etree.Element(etree.QName(gpx_ns, 'metadata'))
-    metadata.append(_create_string_element(gpx_ns, "name", "my name"))
-    metadata.append(_create_string_element(gpx_ns, "desc", "my_description"))
+def _create_metadata_element(
+        bounds,
+        name="SQ100 Tracks",
+        description="Tracks export from the SQ100 application",
+        date=datetime.datetime.now(),
+        ns=gpx_ns, tag='metadata'):
+    metadata = etree.Element(etree.QName(ns, tag))
     metadata.append(
-        _create_datetime_element(gpx_ns, "time", datetime.datetime.now()))
-    metadata.append(_create_bounds_element())
+        _create_string_element(ns=ns, tag="name", value=name))
+    metadata.append(
+        _create_string_element(ns=ns, tag="desc", value=description))
+    metadata.append(_create_datetime_element(ns=ns, tag="time", value=date))
+    metadata.append(_create_bounds_element(ns=ns, tag="bounds", value=bounds))
     return metadata
 
 
-def _create_string_element(namespace, name, value):
-    elem = etree.Element(etree.QName(namespace, name))
+def _create_string_element(ns, tag, value):
+    elem = etree.Element(etree.QName(ns, tag))
     elem.text = value
     return elem
 
 
-def _create_track_element(track, number):
-    trk = etree.Element(etree.QName(gpx_ns, 'trk'))
-    trk.append(_create_string_element(gpx_ns, "name", "GPS track name"))
-    trk.append(_create_string_element(gpx_ns, "cmt", track.id))
-    trk.append(_create_string_element(gpx_ns, "desc", "user description"))
-    trk.append(_create_string_element(gpx_ns, "src", "Arival SQ100 computer"))
-    trk.append(_create_string_element(gpx_ns, "number", number))
-    trk.append(_create_track_segment_element(track))
-    return trk
+def _create_track_element(track, number, src="Arival SQ100 computer",
+                          ns=gpx_ns, tag="trk"):
+    elem = etree.Element(etree.QName(ns, tag))
+    elem.append(_create_string_element(gpx_ns, "name", track.name))
+    elem.append(_create_string_element(gpx_ns, "cmt", "id=%s" % track.id))
+    elem.append(_create_string_element(gpx_ns, "desc", track.description))
+    elem.append(_create_string_element(gpx_ns, "src", src))
+    elem.append(_create_decimal_element(gpx_ns, "number", number))
+    elem.append(_create_track_segment_element(track))
+    return elem
 
 
-def _create_track_point_element(track_point):
-    trkpt = etree.Element(etree.QName(gpx_ns, "trkpt"))
-    trkpt.set("lat", track_point.latitude)
-    trkpt.set("lon", track_point.longitude)
+def _create_track_point_element(track_point, ns=gpx_ns, tag='trkpt'):
+    trkpt = etree.Element(etree.QName(ns, tag))
+    trkpt.set("lat", str(track_point.latitude))
+    trkpt.set("lon", str(track_point.longitude))
     trkpt.append(_create_decimal_element(gpx_ns, "ele", track_point.altitude))
-    trkpt.append(_create_datetime_element(gpx_ns, "time", track_point.time))
+    trkpt.append(_create_datetime_element(gpx_ns, "time", track_point.date))
     trkpt.append(_create_track_point_extensions_element(track_point))
     return trkpt
 
 
-def _create_track_point_extensions_element(track_point):
-    extensions = etree.Element(etree.QName(gpx_ns, "extensions"))
+def _create_track_point_extensions_element(track_point, ns=gpx_ns,
+                                           tag="extensions"):
+    extensions = etree.Element(etree.QName(ns, tag))
     extensions.append(
         _create_garmin_track_point_extension_element(track_point))
     return extensions
 
 
-def _create_track_segment_element(track):
-    segment = etree.Element(etree.QName(gpx_ns, "trkseg"))
+def _create_track_segment_element(track, ns=gpx_ns, tag="trkseg"):
+    segment = etree.Element(etree.QName(ns, tag))
     for track_point in track.track_points:
         segment.append(_create_track_point_element(track_point))
     return segment
