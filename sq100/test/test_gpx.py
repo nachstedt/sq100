@@ -4,7 +4,6 @@ from mock import call, create_autospec, MagicMock, patch
 from lxml import etree
 
 import sq100.gpx as gpx
-from test import test_datetime
 
 
 def test_bounds_element():
