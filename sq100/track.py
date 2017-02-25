@@ -1,4 +1,16 @@
-import datetime
+
+
+class CoordinateBounds(object):
+
+    def __init__(self, minimum, maximum):
+        self.min = minimum
+        self.max = maximum
+
+    def __str__(self):
+        return "(%s, %s)" % (self.min, self.max)
+
+    def __eq__(self, other):
+        return self.__dict__ == other.__dict__
 
 
 class Track(object):
@@ -9,22 +21,27 @@ class Track(object):
                  calories=None,
                  date=None,
                  descending_height=None,
+                 description=None,
                  distance=None,
                  duration=None,
+                 laps=[],
                  max_heart_rate=None,
                  max_height=None,
                  max_speed=None,
                  memory_block_index=None,
                  min_height=None,
+                 name=None,
                  no_laps=None,
                  no_track_points=None,
                  track_id=None,
+                 track_points=[]
                  ):
         self.ascending_height = ascending_height
         self.avg_heart_rate = avg_heart_rate
         self.calories = calories
         self.date = date
         self.descending_height = descending_height
+        self.description = description
         self.distance = distance
         self.duration = duration
         self.id = track_id
@@ -33,10 +50,14 @@ class Track(object):
         self.max_speed = max_speed
         self.memory_block_index = memory_block_index
         self.min_height = min_height
+        self.name = name
         self.no_laps = no_laps
         self.no_track_points = no_track_points
-        self.track_points = []
-        self.laps = []
+        self.track_points = track_points
+        self.laps = laps
+
+    def bounds(self):
+        raise NotImplementedError
 
     def compatible_to(self, other):
         def c(a, b):
