@@ -4,9 +4,7 @@ from mock import call, create_autospec, MagicMock, patch
 from lxml import etree
 
 import sq100.gpx as gpx
-from sq100.point import Point
-from sq100.track import Track, CoordinateBounds
-from sq100.trackpoint import Trackpoint
+from sq100.types import CoordinateBounds, Point, Track, TrackPoint
 
 
 def test_calc_tracks_bounds():
@@ -134,7 +132,7 @@ def test_create_track_element(mock_create_segment_element):
 def test_create_track_point_element(mock_create_extensions_elem):
     ns = '{%s}' % gpx.gpx_ns
     mock_create_extensions_elem.return_value = etree.Element(ns + 'extensions')
-    tp = Trackpoint(latitude=23.4, longitude=-32.1, altitude=678.51,
+    tp = TrackPoint(latitude=23.4, longitude=-32.1, altitude=678.51,
                     date=datetime.datetime(1987, 12, 19, 15, 30, 20))
     elem = gpx._create_track_point_element(tp)
     assert float(elem.get('lat')) == tp.latitude
@@ -147,7 +145,7 @@ def test_create_track_point_element(mock_create_extensions_elem):
 @patch('sq100.gpx._create_garmin_track_point_extension_element', autospec=True)
 def test_create_track_point_extensions_element(mock_create_garmin_element):
     mock_create_garmin_element.return_value = etree.Element("garmin")
-    track_point = Trackpoint()
+    track_point = TrackPoint()
     elem = gpx._create_track_point_extensions_element(track_point)
     assert elem.tag == "{%s}%s" % (gpx.gpx_ns, 'extensions')
     assert elem.find('garmin') is not None

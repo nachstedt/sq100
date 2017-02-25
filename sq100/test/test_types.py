@@ -1,10 +1,10 @@
 import copy
 import datetime
 
-from sq100.track import Track
+from sq100.types import Track
 
 
-def test_compare_to():
+def test_track_compare_to():
     t1 = Track(ascending_height=75,
                avg_heart_rate=154,
                calories=891,
