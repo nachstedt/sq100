@@ -1,13 +1,13 @@
-lib
-bin
-include
-pip-selfcheck.json
-pyvenv.cfg
+build
+dist
+.cache
 .project
 .pydevproject
 .coverage
 .eggs
 .settings
 sq100.egg-info
+*.gpx
+*.log
 *.pyc
 
