@@ -11,6 +11,7 @@ import tabulate
 
 from sq100.arival_sq100 import ArivalSQ100
 from sq100.gpx import tracks_to_gpx
+from sq100.utilities import parse_range
 
 logging.basicConfig(filename="sq100.log", level=logging.DEBUG)
 
@@ -102,14 +103,6 @@ class SQ100(object):
         waypoints = self.computer.import_waypoints()
         results = self.computer.set_waypoints(waypoints)
         print('Imported %i Waypoints' % results)
-
-
-def parse_range(astr):
-    result = set()
-    for part in astr.split(','):
-        x = part.split('-')
-        result.update(range(int(x[0]), int(x[-1]) + 1))
-    return sorted(result)
 
 
 class SQ100Shell(cmd.Cmd):

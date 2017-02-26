@@ -1,7 +1,7 @@
 import datetime
 from lxml import etree
 
-from sq100.data_types import CoordinateBounds, Point
+from sq100.utilities import calc_tracks_bounds
 
 "namespacces"
 gpx_ns = "http://www.topografix.com/GPX/1/1"
@@ -9,17 +9,6 @@ gpx_ns_def = "http://www.topografix.com/GPX/1/1/gpx.xsd"
 xsi_ns = "http://www.w3.org/2001/XMLSchema-instance"
 tpex_ns = 'http://www.garmin.com/xmlschemas/TrackPointExtension/v2'
 tpex_ns_def = "https://www8.garmin.com/xmlschemas/TrackPointExtensionv2.xsd"
-
-
-def _calc_tracks_bounds(tracks):
-    track_bounds = [t.bounds() for t in tracks]
-    min_latitude = min([b.min.latitude for b in track_bounds])
-    min_longitude = min([b.min.longitude for b in track_bounds])
-    max_latitude = max([b.max.latitude for b in track_bounds])
-    max_longitude = max([b.max.longitude for b in track_bounds])
-    return CoordinateBounds(
-        minimum=Point(latitude=min_latitude, longitude=min_longitude),
-        maximum=Point(latitude=max_latitude, longitude=max_longitude))
 
 
 def _create_bounds_element(value, ns=gpx_ns, tag='bounds',):
@@ -55,7 +44,7 @@ def _create_gpx_element(tracks):
     gpx.set("creator", 'https://github.com/tnachstedt/sq100')
     gpx.set(etree.QName(xsi_ns, "schemaLocation"),
             "%s %s %s %s" % (gpx_ns, gpx_ns_def, tpex_ns, tpex_ns_def))
-    gpx.append(_create_metadata_element(bounds=_calc_tracks_bounds(tracks)))
+    gpx.append(_create_metadata_element(bounds=calc_tracks_bounds(tracks)))
     for i, track in enumerate(tracks):
         gpx.append(_create_track_element(track=track, number=i))
     return gpx

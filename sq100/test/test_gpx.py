@@ -1,25 +1,9 @@
 import datetime
-import pytest
-from mock import call, create_autospec, MagicMock, patch
+from mock import create_autospec, patch
 from lxml import etree
 
 import sq100.gpx as gpx
 from sq100.data_types import CoordinateBounds, Point, Track, TrackPoint
-
-
-def test_calc_tracks_bounds():
-    tracks = [create_autospec(Track) for _ in range(3)]
-    track_bounds = [
-        CoordinateBounds(minimum=Point(-20, 5), maximum=Point(0, 11)),
-        CoordinateBounds(minimum=Point(8, -3), maximum=Point(10, 2)),
-        CoordinateBounds(minimum=Point(5, 7), maximum=Point(12, 9))]
-    for i in range(3):
-        tracks[i].bounds.return_value = track_bounds[i]
-    bounds = gpx._calc_tracks_bounds(tracks)
-    expected = CoordinateBounds(minimum=Point(-20, -3), maximum=Point(12, 11))
-    print(bounds)
-    print(expected)
-    assert bounds == expected
 
 
 def test_create_bounds_element():
@@ -57,7 +41,7 @@ def test_create_decimal_element():
 
 
 def test_create_garmin_track_point_extension_element():
-    track_point = MagicMock()
+    track_point = create_autospec(TrackPoint)
     track_point.heart_rate = 150
     ns = 'http://www.garmin.com/xmlschemas/TrackPointExtension/v2'
     elem = gpx._create_garmin_track_point_extension_element(track_point)
@@ -68,7 +52,7 @@ def test_create_garmin_track_point_extension_element():
 
 @patch("sq100.gpx._create_metadata_element", autospec=True)
 @patch("sq100.gpx._create_track_element", autospec=True)
-@patch('sq100.gpx._calc_tracks_bounds', autospec=True)
+@patch('sq100.gpx.calc_tracks_bounds', autospec=True)
 def test_create_gpx_element(mock_calc_tracks_bounds,
                             mock_create_track_element,
                             mock_create_metadata_element):
