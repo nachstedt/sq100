@@ -14,8 +14,8 @@ setup(
     author='Timo Nachstedt',
     tests_require=['pytest', 'pytest-pep8', 'mock'],
     setup_requires=['pytest-runner>=2.9,<3dev'],
-    install_requires=['pyserial',
-                      'tabulate'],
+    install_requires=['pyserial>=3.0,<4.0',
+                      'tabulate>=0.7,<1.0'],
     author_email='mail@nachstedt.com',
     description='Alternative read out for the SQ 100 heart rate monitor',
     long_description="""
