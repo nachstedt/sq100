@@ -1,7 +1,7 @@
 import datetime
 from lxml import etree
 
-from sq100.types import CoordinateBounds, Point
+from sq100.data_types import CoordinateBounds, Point
 
 "namespacces"
 gpx_ns = "http://www.topografix.com/GPX/1/1"

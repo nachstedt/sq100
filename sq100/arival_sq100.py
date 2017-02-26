@@ -6,7 +6,7 @@ import struct
 
 from sq100.exceptions import SQ100MessageException
 from sq100.serial_connection import SerialConnection
-from sq100.types import Lap, Track, TrackPoint
+from sq100.data_types import Lap, Track, TrackPoint
 
 
 logger = logging.getLogger(__name__)
