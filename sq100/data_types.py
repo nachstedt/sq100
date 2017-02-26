@@ -87,7 +87,7 @@ class Track(object):
                  description=None,
                  distance=None,
                  duration=None,
-                 laps=[],
+                 laps=None,
                  max_heart_rate=None,
                  max_height=None,
                  max_speed=None,
@@ -97,7 +97,7 @@ class Track(object):
                  no_laps=None,
                  no_track_points=None,
                  track_id=None,
-                 track_points=[]
+                 track_points=None
                  ):
         self.ascending_height = ascending_height
         self.avg_heart_rate = avg_heart_rate
@@ -116,8 +116,8 @@ class Track(object):
         self.name = name
         self.no_laps = no_laps
         self.no_track_points = no_track_points
-        self.track_points = track_points
-        self.laps = laps
+        self.track_points = track_points if track_points is not None else []
+        self.laps = laps if laps is not None else []
 
     def __str__(self):
         props = ["%s: %s" % ((k, "%d items" % len(v)) if type(v) is list

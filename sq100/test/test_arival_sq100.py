@@ -603,9 +603,10 @@ def test_get_track_list(mock_unpack, mock_query):
 @patch('sq100.arival_sq100.ArivalSQ100._process_get_tracks_lap_info_msg')
 @patch('sq100.arival_sq100.ArivalSQ100._process_get_tracks_track_info_msg')
 @patch.object(ArivalSQ100, '_query')
+@patch.object(Track, 'update_track_point_times')
 @patch('sq100.arival_sq100.ArivalSQ100._pack_get_tracks_parameter')
 @patch('sq100.arival_sq100.ArivalSQ100._track_ids_to_memory_indices')
-def test_get_tracks(mock_id2index, mock_pack, mock_query,
+def test_get_tracks(mock_id2index, mock_pack, mock_update_tp_times, mock_query,
                     mock_process_track_info, mock_process_lap_info,
                     mock_process_track_points, mock_is_finish):
     sq100 = ArivalSQ100(port=None, baudrate=None, timeout=None)
@@ -617,12 +618,7 @@ def test_get_tracks(mock_id2index, mock_pack, mock_query,
         "the end"]
 
     def track_info_side_effect(msg):
-        track = create_autospec(Track)
-        track.track_info = msg
-        track.laps = None
-        track.track_points = []
-        track.complete.side_effect = lambda: len(track.track_points) == 2
-        return track
+        return Track(name=msg, no_track_points=2)
 
     def lap_info_side_effect(track, msg):
         track.laps = msg
@@ -636,10 +632,10 @@ def test_get_tracks(mock_id2index, mock_pack, mock_query,
     mock_is_finish.side_effect = lambda msg: msg == "the end"
 
     tracks = sq100.get_tracks([1, 5])
-    assert tracks[0].track_info == "track info 1"
+    assert tracks[0].name == "track info 1"
     assert tracks[0].laps == "lap info 1"
     assert tracks[0].track_points == ["track points 1.1", "track points 1.2"]
-    assert tracks[1].track_info == "track info 2"
+    assert tracks[1].name == "track info 2"
     assert tracks[1].laps == "lap info 2"
     assert tracks[1].track_points == ["track points 2.1", "track points 2.2"]
 
