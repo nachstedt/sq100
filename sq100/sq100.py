@@ -19,30 +19,38 @@ logging.basicConfig(filename="sq100.log", level=logging.DEBUG)
 class SQ100(object):
 
     def __init__(self):
-        self.config = configparser.SafeConfigParser()
-        self.config.read('config.ini')
+        config = configparser.SafeConfigParser()
+        config.read('config.ini')
+        self.serial_comport = config['serial'].get("comport")
+        self.serial_baudrate = config['serial'].get('baudrate')
+        self.serial_timeout = config['serial'].get('timeout')
         self.computer = None
 
     def connect(self):
-        self.computer = ArivalSQ100(
-            port=self.config['serial'].get("comport", '/dev/ttyUSB0'),
-            baudrate=self.config['serial'].getint("baudrate", 115200),
-            timeout=self.config['serial'].getint("timeout", 2))
+        self.computer = ArivalSQ100(port=self.serial_comport,
+                                    baudrate=self.serial_baudrate,
+                                    timeout=self.serial_timeout)
         self.computer.connect()
 
     def delete_all_tracks(self):
+        print("Sorry! Deleting all tracks is not yet implemented")
+        return
         print("Delete all Tracks")
         input("warning, DELETING ALL TRACKS").strip()
         results = self.computer.delete_all_tracks()
         print('Deleted all Tracks:', results)
 
     def delete_all_waypoints(self):
+        print("Sorry! Deleting all waypoints is not yet implemented")
+        return
         print("Delete all Waypoints")
         input("WARNING DELETING ALL WAYPOINTS").strip()
         results = self.computer.delete_all_waypoints()
         print('Formatted all Waypoints:', results)
 
     def device_info(self):
+        print('Sorry! Showing Device Info is not yet implemented.')
+        return
         unit = self.computer.getUnitInformation()
         print("* %s waypoints on watch" % unit['waypoint_count'])
         print("* %s trackpoints on watch" % unit['trackpoint_count'])
@@ -56,13 +64,16 @@ class SQ100(object):
             tracks_to_gpx([track], "downloaded_tracks-%s.gpx" % track.id)
 
     def download_waypoints(self):
+        print("Sorry! Downloading way points is not yet implemented.")
+        return
         print("Download Waypoints")
         waypoints = self.computer.get_waypoints()
         results = self.computer.exportWaypoints(waypoints)
         print('exported Waypoints to', results)
 
     def export_all_tracks(self):
-        pass
+        print("Sorry! Exporting all tracks is not yet implemented.")
+        return
 
     def show_tracklist(self):
         tracks = self.computer.get_track_list()
@@ -79,6 +90,8 @@ class SQ100(object):
         pass
 
     def upload_tracks(self):
+        print("Sorry! Uploading tracks is not yet implemented.")
+        return
         print("Upload Tracks")
         files = glob.glob(
             os.path.join(Utilities.getAppPrefix(), "import", "*.gpx"))
@@ -99,6 +112,8 @@ class SQ100(object):
         print('successfully uploaded tracks ', str(results))
 
     def upload_waypoints(self):
+        print("Sorry! Uploading way points is not yet implemented.")
+        return
         print("Upload Waypoints")
         waypoints = self.computer.import_waypoints()
         results = self.computer.set_waypoints(waypoints)
@@ -109,9 +124,9 @@ class SQ100Shell(cmd.Cmd):
     intro = "Welcome to SQ100. Type help or ? to list commands.\n"
     prompt = '(sq100)'
 
-    def __init__(self):
+    def __init__(self, sq100):
         super().__init__()
-        self.sq100 = SQ100()
+        self.sq100 = sq100
         self.sq100.connect()
 
     def do_delete_all_tracks(self, arg):
@@ -153,63 +168,66 @@ class SQ100Shell(cmd.Cmd):
         self.sq100.upload_waypoints()
 
 
-def process_command_line_arguments():
+def main():
+    sq100 = SQ100()
+
     description = (
         'Serial Communication with the Arival SQ100 heart rate computer')
     parser = argparse.ArgumentParser(description=description)
+    parser.add_argument(
+        "-c", "--comport",
+        help="comport for serial communication",
+        default=sq100.serial_comport)
+    parser.add_argument(
+        "-b", "--baudrate",
+        help="baudrate for serial communication",
+        type=int,
+        default=sq100.serial_baudrate)
+    parser.add_argument(
+        "-t", "--timeout",
+        help="timeout for serial communication",
+        type=int,
+        default=sq100.serial_timeout)
+    subparsers = parser.add_subparsers(dest="command")
 
-    parser.add_argument(
-        'command',
-        help='command to execute',
-        choices=['tracklist', 'trackdown'],
-        default='tracklist')
-    parser.add_argument(
-        "-t", "--track",
-        help="a track id",
-        action="append",
-        dest="tracks",
-        type="int")
-    parser.add_argument(
+    subparsers.add_parser("list")
+
+    parser_download = subparsers.add_parser("download")
+    parser_download.add_argument(
+        "track_ids",
+        help="list of track ids to download",
+        type=parse_range)
+    parser_download.add_argument(
         "-f", "--format",
         help="the format to export to",
         choices=['gpx'])
-    parser.add_option(
+    parser_download.add_argument(
         "-m", "--merge",
         help="merge into single file?",
         action="store_true")
-    parser.add_option(
-        "-c", "--comport",
-        help="the comport to use")
-    parser.add_option(
-        "-i", "--input",
-        help="input file(s)",
-        action="append")
-    parser.add_option(
-        "-o", "--output",
-        help="the path to output to")
+
+#     parser.add_argument(
+#         "-i", "--input",
+#         help="input file(s)",
+#         action="append")
+#     parser.add_argument(
+#         "-o", "--output",
+#         help="the path to output to")
 
     args = parser.parse_args()
+    sq100.serial_comport = args.comport
+    sq100.serial_baudrate = args.baudrate
+    sq100.serial_timeout = args.timeout
 
-    sq100 = SQ100()
-
-    if args.comport:
-        sq100.config.set('serial', 'comport', args.comport)
-
-    if args.command == "tracklist":
+    if args.command is None:
+        SQ100Shell(sq100).cmdloop()
+    elif args.command == "list":
+        sq100.connect()
         sq100.show_tracklist()
+    elif args.command == "download":
+        sq100.connect()
+        sq100.download_tracks(track_ids=args.track_ids, merge=args.merge)
 
-    if args.command == "trackdown":
-        if not args.tracks:
-            parser.error("use option '--track' to select track")
-
-        sq100.download_tracks(track_ids=args.tracks, merge=args.merge)
-
-
-def main():
-    if not sys.argv[1:]:
-        SQ100Shell().cmdloop()
-    else:
-        process_command_line_arguments()
 
 if __name__ == "__main__":
     main()
