@@ -10,6 +10,7 @@ import sys
 import tabulate
 
 from sq100.arival_sq100 import ArivalSQ100
+from sq100.exceptions import SQ100SerialException
 from sq100.gpx import tracks_to_gpx
 from sq100.utilities import parse_range
 
@@ -30,7 +31,12 @@ class SQ100(object):
         self.computer = ArivalSQ100(port=self.serial_comport,
                                     baudrate=self.serial_baudrate,
                                     timeout=self.serial_timeout)
-        self.computer.connect()
+        try:
+            self.computer.connect()
+            return True
+        except SQ100SerialException:
+            print("Connection to device failed! Check serial settings.")
+            return False
 
     def delete_all_tracks(self):
         print("Sorry! Deleting all tracks is not yet implemented")
@@ -127,7 +133,6 @@ class SQ100Shell(cmd.Cmd):
     def __init__(self, sq100):
         super().__init__()
         self.sq100 = sq100
-        self.sq100.connect()
 
     def do_delete_all_tracks(self, arg):
         "delete all tracks on device"
@@ -219,13 +224,14 @@ def main():
     sq100.serial_baudrate = args.baudrate
     sq100.serial_timeout = args.timeout
 
+    if sq100.connect() is False:
+        return
+
     if args.command is None:
         SQ100Shell(sq100).cmdloop()
     elif args.command == "list":
-        sq100.connect()
         sq100.show_tracklist()
     elif args.command == "download":
-        sq100.connect()
         sq100.download_tracks(track_ids=args.track_ids, merge=args.merge)
 
 
