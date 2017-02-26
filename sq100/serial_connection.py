@@ -1,7 +1,7 @@
 import logging
 import serial
 
-from sq100.exceptions import GH600SerialException
+from sq100.exceptions import SQ100SerialException
 
 
 logger = logging.getLogger(__name__)
@@ -52,7 +52,7 @@ class SerialConnection():
             logger.debug("serial connection on %s", self.serial.portstr)
         except serial.SerialException:
             logger.critical("error establishing serial connection")
-            raise GH600SerialException
+            raise SQ100SerialException
 
     def disconnect(self):
         """disconnect the serial connection"""
@@ -65,7 +65,7 @@ class SerialConnection():
             self.serial.write(command)
         except serial.SerialTimeoutException:
             logger.critical("write timeout occured")
-            raise GH600SerialException
+            raise SQ100SerialException
 
     def read(self, size=2070):
         data = self.serial.read(size)
@@ -79,7 +79,7 @@ class SerialConnection():
             if data:
                 return data
             logger.debug("no data at serial port at attempt %d", attempt)
-        raise GH600SerialException("query failed")
+        raise SQ100SerialException("query failed")
 
 #     def _diagnostic(self):
 #         """check if a connection can be established"""
@@ -89,7 +89,7 @@ class SerialConnection():
 #             self._disconnectSerial()
 #             self.logger.info("serial connection established successfully")
 #             return True
-#         except GH600SerialException:
+#         except SQ100SerialException:
 #             self.logger.info("error establishing serial port connection, "
 #                              "please check your config.ini file")
 #             return False

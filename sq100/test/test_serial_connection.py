@@ -3,7 +3,7 @@ import serial
 import pytest
 
 from sq100.serial_connection import SerialConnection
-from sq100.exceptions import GH600SerialException
+from sq100.exceptions import SQ100SerialException
 
 
 @patch("serial.Serial")
@@ -67,7 +67,7 @@ def test_connect_failed(MockSerial):
     instance = MockSerial.return_value
     instance.open.side_effect = serial.SerialException
     connection = SerialConnection()
-    with pytest.raises(GH600SerialException):
+    with pytest.raises(SQ100SerialException):
         connection.connect()
     instance.open.assert_called_once_with()
 
@@ -93,7 +93,7 @@ def test_write_failed(MockSerial):
     instance = MockSerial.return_value
     instance.write.side_effect = serial.SerialTimeoutException
     connection = SerialConnection()
-    with pytest.raises(GH600SerialException):
+    with pytest.raises(SQ100SerialException):
         connection.write(b'\x00\x80')
     instance.write.assert_called_once_with(b'\x00\x80')
 
@@ -135,7 +135,7 @@ def test_query_fails():
     connection = SerialConnection()
     connection.write = MagicMock()
     connection.read = MagicMock(return_value=b'')
-    with pytest.raises(GH600SerialException):
+    with pytest.raises(SQ100SerialException):
         connection.query(command)
     assert connection.write.call_count == 3
     assert connection.read.call_count == 3
