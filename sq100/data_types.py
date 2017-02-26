@@ -119,6 +119,13 @@ class Track(object):
         self.track_points = track_points
         self.laps = laps
 
+    def __str__(self):
+        props = ["%s: %s" % ((k, "%d items" % len(v)) if type(v) is list
+                             else (k, v))
+                 for k, v in self.__dict__.items()
+                 if v is not None]
+        return "Track(" + ', '.join(sorted(props)) + ")"
+
     def bounds(self):
         return CoordinateBounds(
             minimum=Point(

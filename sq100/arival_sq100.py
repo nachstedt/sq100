@@ -47,8 +47,11 @@ class ArivalSQ100(object):
 
     @staticmethod
     def _process_get_tracks_lap_info_msg(track, msg):
-        logger.debug("setting laps of track")
+        logger.debug("processing get_tracks lap info msg")
+        logger.debug("track: %s", track)
         trackhead, laps = ArivalSQ100._unpack_lap_info_parameter(msg.parameter)
+        logger.debug("trackhead: %s", trackhead)
+        logger.debug("laps: %s", laps)
         if not track.compatible_to(trackhead):
             raise SQ100MessageException("unexpected track header")
         track.laps = laps
@@ -56,18 +59,28 @@ class ArivalSQ100(object):
 
     @staticmethod
     def _process_get_tracks_track_info_msg(msg):
-        logger.debug("initializing new track")
+        logger.debug("processing get_tracks track info msg")
         track = ArivalSQ100._unpack_track_info_parameter(msg.parameter)
+        logger.debug("new track: %s", track)
         return track
 
     @staticmethod
     def _process_get_tracks_track_points_msg(track, msg):
+        logger.debug("processing get_track track points msg")
+        logger.debug("track = %s", track)
         trackhead, session_indices, track_points = (
             ArivalSQ100._unpack_track_point_parameter(msg.parameter))
+        logger.debug("trackhead = %s", trackhead)
+        logger.debug("session_indices = %s", session_indices)
+        logger.debug("no_track_points = %s", len(track_points))
         if not track.compatible_to(trackhead):
             raise SQ100MessageException('unexpected track header')
         if session_indices[0] != len(track.track_points):
-            raise SQ100MessageException('unexpected session start')
+            raise SQ100MessageException(
+                "unexpectes session start (" +
+                ("session_indicces : %d,%d, " % session_indices) +
+                ("number of track points in track: %d)" %
+                 len(track.track_points)))
         if session_indices[1] - session_indices[0] + 1 != len(track_points):
             raise SQ100MessageException(
                 'session indices incompatible to number of received track '
