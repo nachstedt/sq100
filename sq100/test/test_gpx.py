@@ -1,6 +1,6 @@
 import datetime
 from mock import create_autospec, patch
-from lxml import etree
+import xml.etree.ElementTree as etree
 
 import sq100.gpx as gpx
 from sq100.data_types import CoordinateBounds, Point, Track, TrackPoint
@@ -146,6 +146,15 @@ def test_create_track_segment_element(mock_create_track_point_element):
     assert elem.findall('trkpt')[0].get('foo') == "tp1"
     assert elem.findall('trkpt')[1].get('foo') == "tp2"
     assert elem.findall('trkpt')[2].get('foo') == "tp3"
+
+
+def test_indent():
+    elem = etree.Element('main')
+    etree.SubElement(elem, "suba")
+    gpx._indent(elem)
+    expected = "<main>\n  <suba />\n</main>\n"
+    actual = etree.tostring(elem, encoding='unicode')
+    assert actual == expected
 
 
 @patch('sq100.gpx.etree.ElementTree', autospec=True)

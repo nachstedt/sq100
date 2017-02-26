@@ -1,5 +1,5 @@
 import datetime
-from lxml import etree
+import xml.etree.ElementTree as etree
 
 from sq100.utilities import calc_tracks_bounds
 
@@ -38,8 +38,7 @@ def _create_garmin_track_point_extension_element(track_point, ns=tpex_ns):
 
 
 def _create_gpx_element(tracks):
-    nsmap = {None: gpx_ns, 'xsi': xsi_ns, 'garmin': tpex_ns}
-    gpx = etree.Element('gpx', nsmap=nsmap)
+    gpx = etree.Element('gpx')
     gpx.set('version', '1.1')
     gpx.set("creator", 'https://github.com/tnachstedt/sq100')
     gpx.set(etree.QName(xsi_ns, "schemaLocation"),
@@ -109,11 +108,32 @@ def _create_track_segment_element(track, ns=gpx_ns, tag="trkseg"):
     return segment
 
 
+def _indent(elem, level=0):
+    '''
+    copy and paste from http://effbot.org/zone/element-lib.htm#prettyprint
+    '''
+    i = "\n" + level * "  "
+    if len(elem):
+        if not elem.text or not elem.text.strip():
+            elem.text = i + "  "
+        if not elem.tail or not elem.tail.strip():
+            elem.tail = i
+        for elem in elem:
+            _indent(elem, level + 1)
+        if not elem.tail or not elem.tail.strip():
+            elem.tail = i
+    else:
+        if level and (not elem.tail or not elem.tail.strip()):
+            elem.tail = i
+
+
 def tracks_to_gpx(tracks, filename):
     gpx = _create_gpx_element(tracks)
+    _indent(gpx)
     doc = etree.ElementTree(gpx)
+    etree.register_namespace('', gpx_ns)
+    etree.register_namespace('garmin', tpex_ns)
     doc.write(filename,
               encoding="UTF-8",
               xml_declaration=True,
-              method='xml',
-              pretty_print=True)
+              method='xml')
