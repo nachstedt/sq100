@@ -1,7 +1,7 @@
 import copy
 import datetime
 
-from sq100.types import Track
+from sq100.data_types import Track
 
 
 def test_track_compare_to():

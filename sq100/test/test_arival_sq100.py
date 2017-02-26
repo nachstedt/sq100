@@ -5,7 +5,7 @@ from mock import call, create_autospec, patch
 
 from sq100.arival_sq100 import ArivalSQ100, Message
 from sq100.exceptions import SQ100MessageException
-from sq100.types import Track
+from sq100.data_types import Track
 
 """
 private methods

@@ -4,7 +4,7 @@ from mock import call, create_autospec, MagicMock, patch
 from lxml import etree
 
 import sq100.gpx as gpx
-from sq100.types import CoordinateBounds, Point, Track, TrackPoint
+from sq100.data_types import CoordinateBounds, Point, Track, TrackPoint
 
 
 def test_calc_tracks_bounds():
