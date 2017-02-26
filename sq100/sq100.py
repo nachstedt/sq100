@@ -1,12 +1,30 @@
 #! /usr/bin/env python
 
+# SQ100 - Serial Communication with the a-rival SQ100 heart rate computer
+# Copyright (C) 2017  Timo Nachstedt
+#
+# This file is part of SQ100.
+#
+# SQ100 is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# SQ100 is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
 import argparse
 import cmd
 import configparser
 import glob
 import logging
 import os
-import sys
 import tabulate
 
 from sq100.arival_sq100 import ArivalSQ100
@@ -21,7 +39,7 @@ class SQ100(object):
 
     def __init__(self):
         config = configparser.SafeConfigParser()
-        config.read('config.ini')
+        config.read('sq100.cfg')
         self.serial_comport = config['serial'].get("comport")
         self.serial_baudrate = config['serial'].get('baudrate')
         self.serial_timeout = config['serial'].get('timeout')
@@ -126,8 +144,34 @@ class SQ100(object):
         print('Imported %i Waypoints' % results)
 
 
+gpl_disclaimer = """
+SQ100 - Serial Communication with the a-rival SQ100 heart rate computer
+Copyright (C) 2017  Timo Nachstedt
+
+SQ100 is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+SQ100 is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""
+
+welcome_msg = """SQ100  Copyright (C) 2017  Timo Nachstedt
+This program comes with ABSOLUTELY NO WARRANTY. SQ100 free software, and you
+are welcome to redistribute it under certain conditions;
+type `license' for details.
+
+Welcome to SQ100. Type help or ? to list commands."""
+
+
 class SQ100Shell(cmd.Cmd):
-    intro = "Welcome to SQ100. Type help or ? to list commands.\n"
+    intro = welcome_msg
     prompt = '(sq100)'
 
     def __init__(self, sq100):
@@ -150,6 +194,9 @@ class SQ100Shell(cmd.Cmd):
 #     def do_export_all(self, arg):
 #         "export all tracks"
 #         self.sq100.export_all_tracks()
+
+    def do_license(self, arg):
+        print(gpl_disclaimer)
 
     def do_list(self, arg):
         "show list of all tracks on the device: list"
