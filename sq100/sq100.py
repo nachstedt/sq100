@@ -4,12 +4,15 @@ import argparse
 import cmd
 import configparser
 import glob
+import logging
 import os
 import sys
 import tabulate
 
 from sq100.arival_sq100 import ArivalSQ100
 from sq100.gpx import tracks_to_gpx
+
+logging.basicConfig(filename="sq100.log", level=logging.DEBUG)
 
 
 class SQ100(object):
