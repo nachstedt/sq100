@@ -134,22 +134,22 @@ class SQ100Shell(cmd.Cmd):
         super().__init__()
         self.sq100 = sq100
 
-    def do_delete_all_tracks(self, arg):
-        "delete all tracks on device"
-        self.sq100.delete_all_tracks()
-
-    def do_delete_all_waypoints(self, arg):
-        "delete all waypoints on device"
-        self.sq100.delete_all_waypoints()
+#     def do_delete_all_tracks(self, arg):
+#         "delete all tracks on device"
+#         self.sq100.delete_all_tracks()
+#
+#     def do_delete_all_waypoints(self, arg):
+#         "delete all waypoints on device"
+#         self.sq100.delete_all_waypoints()
 
     def do_download(self, arg):
         "export selected tracks into file: export 2,5"
         track_ids = parse_range(arg)
         self.sq100.download_tracks(track_ids=track_ids)
 
-    def do_export_all(self, arg):
-        "export all tracks"
-        self.sq100.export_all_tracks()
+#     def do_export_all(self, arg):
+#         "export all tracks"
+#         self.sq100.export_all_tracks()
 
     def do_list(self, arg):
         "show list of all tracks on the device: list"
@@ -159,18 +159,18 @@ class SQ100Shell(cmd.Cmd):
         "Exit the application"
         return True
 
-    def do_upload(self, arg):
-        "upload tracks"
-        self.sq100.upload_tracks()
-        pass
-
-    def do_wpt_download(self, arg):
-        "download waypoints"
-        self.sq100.download_waypoints()
-
-    def do_wpt_upload(self, arg):
-        "upload waypoints"
-        self.sq100.upload_waypoints()
+#     def do_upload(self, arg):
+#         "upload tracks"
+#         self.sq100.upload_tracks()
+#         pass
+#
+#     def do_wpt_download(self, arg):
+#         "download waypoints"
+#         self.sq100.download_waypoints()
+#
+#     def do_wpt_upload(self, arg):
+#         "upload waypoints"
+#         self.sq100.upload_waypoints()
 
 
 def main():
