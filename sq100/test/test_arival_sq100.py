@@ -163,13 +163,13 @@ def test_process_get_tracks_track_points_msg_wrong_session_length(mock_unpack):
 def test_query(mock_serial_connection, mock_unpack, mock_create):
     mock_serial = mock_serial_connection.return_value
     sq100 = ArivalSQ100(port=None, baudrate=None, timeout=None)
-    mock_serial.query.return_value = "returned message"
+    mock_serial.read.side_effect = [b'\x00\x00\x0c', b'timo']
     mock_create.return_value = "sent message"
     mock_unpack.return_value = "unpacked data"
     assert sq100._query("the command", "the parameter") == "unpacked data"
     mock_create.assert_called_once_with('the command', 'the parameter')
-    mock_serial.query.assert_called_once_with('sent message')
-    mock_unpack.assert_called_once_with('returned message')
+    mock_serial.read.assert_has_calls([call(3), call(13)])
+    mock_unpack.assert_called_once_with(b'\x00\x00\x0ctimo')
 
 
 @patch.object(ArivalSQ100, "get_track_list")

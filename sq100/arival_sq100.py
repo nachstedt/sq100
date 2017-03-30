@@ -108,9 +108,12 @@ class ArivalSQ100(object):
         return track
 
     def _query(self, command, parameter=b''):
-        return self._unpack_message(
-            self.serial.query(
-                self._create_message(command, parameter)))
+        self.serial.write(self._create_message(command, parameter))
+        "first, read three bytes to determine payload"
+        begin = self.serial.read(3)
+        _, payload = struct.unpack(">BH", begin)
+        rest = self.serial.read(payload + 1)  # +1 for checksum
+        return self._unpack_message(begin + rest)
 
     def _track_ids_to_memory_indices(self, track_ids):
         tracks = self.get_track_list()
@@ -163,7 +166,10 @@ class ArivalSQ100(object):
         msg = Message._make(
             struct.unpack(">BH%dsB" % (len(message) - 4), message))
         if msg.payload_length != len(msg.parameter):
-            raise SQ100MessageException("paylod has wrong length")
+            raise SQ100MessageException(
+                "paylod has wrong length!\n" +
+                ("Message says %d\n" % msg.payload_length) +
+                ("Parameter length is %d" % len(msg.parameter)))
         if msg.checksum != ArivalSQ100._calc_checksum(msg.parameter):
             raise SQ100MessageException("checksum wrong")
         return msg
