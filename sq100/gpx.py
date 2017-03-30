@@ -150,7 +150,7 @@ def tracks_to_gpx(tracks, filename):
     _indent(gpx)
     doc = etree.ElementTree(gpx)
     etree.register_namespace('', gpx_ns)
-    etree.register_namespace('garmin', tpex_ns)
+    etree.register_namespace('gpxtpx', tpex_ns)
     doc.write(filename,
               encoding="UTF-8",
               xml_declaration=True,
