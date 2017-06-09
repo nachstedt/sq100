@@ -79,7 +79,21 @@ class SQ100(object):
         print("* %s waypoints on watch" % unit['waypoint_count'])
         print("* %s trackpoints on watch" % unit['trackpoint_count'])
 
+    def download_latest(self):
+        track_headers = self.computer.get_track_list()
+        if len(track_headers) == 0:
+            print('no tracks found')
+            return
+        latest = sorted(track_headers, key=lambda t: t.date)[-1]
+        print("latest track: %s, %s m, %s" %
+              (latest.date, latest.distance, latest.duration))
+        tracks = self.computer.get_tracks([latest.id])
+        tracks_to_gpx(
+            tracks, "track-%s.gpx" % latest.date.strftime("%Y-%m-%d-%H-%M-%S"))
+
     def download_tracks(self, track_ids=[], merge=False):
+        if len(track_ids) == 0:
+            return
         tracks = self.computer.get_tracks(track_ids)
         if merge:
             tracks_to_gpx(tracks, "downloaded_tracks.gpx")
@@ -111,7 +125,6 @@ class SQ100(object):
             print(tabulate.tabulate(table, headers=headers))
         else:
             print('no tracks found')
-        pass
 
     def upload_tracks(self):
         print("Sorry! Uploading tracks is not yet implemented.")
@@ -188,8 +201,11 @@ class SQ100Shell(cmd.Cmd):
 
     def do_download(self, arg):
         "export selected tracks into file: export 2,5"
-        track_ids = parse_range(arg)
-        self.sq100.download_tracks(track_ids=track_ids)
+        if arg == "latest":
+            self.sq100.download_latest()
+        else:
+            track_ids = parse_range(arg)
+            self.sq100.download_tracks(track_ids=track_ids)
 
 #     def do_export_all(self, arg):
 #         "export all tracks"
@@ -248,7 +264,8 @@ def main():
     parser_download.add_argument(
         "track_ids",
         help="list of track ids to download",
-        type=parse_range)
+        type=parse_range,
+        nargs='?', default=[])
     parser_download.add_argument(
         "-f", "--format",
         help="the format to export to",
@@ -256,6 +273,10 @@ def main():
     parser_download.add_argument(
         "-m", "--merge",
         help="merge into single file?",
+        action="store_true")
+    parser_download.add_argument(
+        "-l", "--latest",
+        help="download latest track",
         action="store_true")
 
 #     parser.add_argument(
@@ -279,6 +300,8 @@ def main():
     elif args.command == "list":
         sq100.show_tracklist()
     elif args.command == "download":
+        if args.latest:
+            sq100.download_latest()
         sq100.download_tracks(track_ids=args.track_ids, merge=args.merge)
 
 
