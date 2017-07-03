@@ -163,7 +163,10 @@ class ArivalSQ100(object):
         msg = Message._make(
             struct.unpack(">BH%dsB" % (len(message) - 4), message))
         if msg.payload_length != len(msg.parameter):
-            raise SQ100MessageException("paylod has wrong length")
+            raise SQ100MessageException(
+                "paylod has wrong length!\n" +
+                ("Message says %d\n" % msg.payload_length) +
+                ("Parameter length is %d" % len(msg.parameter)))
         if msg.checksum != ArivalSQ100._calc_checksum(msg.parameter):
             raise SQ100MessageException("checksum wrong")
         return msg
