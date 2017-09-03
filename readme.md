@@ -1,6 +1,6 @@
 # sq100
-[![Build Status](https://travis-ci.org/tnachstedt/sq100.svg?branch=master)](https://travis-ci.org/tnachstedt/sq100)
-[![Coverage Status](https://coveralls.io/repos/github/tnachstedt/sq100/badge.svg?branch=master)](https://coveralls.io/github/tnachstedt/sq100?branch=master)
+[![Build Status](https://travis-ci.org/nachstedt/sq100.svg?branch=master)](https://travis-ci.org/nachstedt/sq100)
+[![Coverage Status](https://coveralls.io/repos/github/nachstedt/sq100/badge.svg?branch=master)](https://coveralls.io/github/nachstedt/sq100?branch=master)
 
 A replacement for the annoying original Software of the SQ100 pulse clock.
 This project is a complete rewrite of the gh615 project: 

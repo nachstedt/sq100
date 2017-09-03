@@ -85,7 +85,7 @@ class SerialConnection():
             logger.critical("write timeout occured")
             raise SQ100SerialException
 
-    def read(self, size=2070):
+    def read(self, size=3000):
         data = self.serial.read(size)
         logger.debug("reading data:: %s", data)
         return data
